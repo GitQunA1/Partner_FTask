@@ -45,7 +45,11 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
     private TextView tvEmpty;
     private ApiService apiService;
 
+    private static final String KEY_CURRENT_STATUS = "current_status";
+    private static final String KEY_CURRENT_TAB = "current_tab";
+
     private String currentStatus = "ALL";
+    private int currentTabPosition = 0;
 
     @Nullable
     @Override
@@ -56,6 +60,13 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // Restore saved state
+        if (savedInstanceState != null) {
+            currentStatus = savedInstanceState.getString(KEY_CURRENT_STATUS, "ALL");
+            currentTabPosition = savedInstanceState.getInt(KEY_CURRENT_TAB, 0);
+            android.util.Log.d("MyJobsFragment", "📦 Restored state: tab=" + currentTabPosition + ", status=" + currentStatus);
+        }
 
         // Initialize views
         tabLayout = view.findViewById(R.id.tab_layout);
@@ -88,10 +99,26 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
         tabLayout.addTab(tabLayout.newTab().setText("Đang làm"));
         tabLayout.addTab(tabLayout.newTab().setText("Hoàn thành"));
 
+        // ✅ Restore saved tab position or select first tab
+        if (currentTabPosition >= 0 && currentTabPosition < tabLayout.getTabCount()) {
+            tabLayout.selectTab(tabLayout.getTabAt(currentTabPosition));
+            android.util.Log.d("MyJobsFragment", "✅ Restored tab: position " + currentTabPosition);
+        } else if (tabLayout.getSelectedTabPosition() == -1) {
+            tabLayout.selectTab(tabLayout.getTabAt(0));
+            currentStatus = "ALL";
+            currentTabPosition = 0;
+            android.util.Log.d("MyJobsFragment", "✅ Default tab selected: position 0 (Tất cả)");
+        }
+
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 int position = tab.getPosition();
+                String oldStatus = currentStatus;
+
+                // Save current tab position
+                currentTabPosition = position;
+
                 switch (position) {
                     case 0:
                         currentStatus = "ALL";
@@ -105,19 +132,63 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                     case 3:
                         currentStatus = "COMPLETED";
                         break;
+                    default:
+                        currentStatus = "ALL";
+                        break;
                 }
+
+                android.util.Log.d("MyJobsFragment", "════════════════════════════════════════");
+                android.util.Log.d("MyJobsFragment", "📌 TAB SELECTED");
+                android.util.Log.d("MyJobsFragment", "Position: " + position +
+                    " (" + (tab.getText() != null ? tab.getText() : "N/A") + ")");
+                android.util.Log.d("MyJobsFragment", "Status: " + oldStatus + " → " + currentStatus);
+                android.util.Log.d("MyJobsFragment", "════════════════════════════════════════");
+
                 loadMyJobs();
             }
 
             @Override
-            public void onTabUnselected(TabLayout.Tab tab) {}
+            public void onTabUnselected(TabLayout.Tab tab) {
+                android.util.Log.d("MyJobsFragment", "Tab unselected: " +
+                    (tab.getText() != null ? tab.getText() : "N/A"));
+            }
 
             @Override
-            public void onTabReselected(TabLayout.Tab tab) {}
+            public void onTabReselected(TabLayout.Tab tab) {
+                android.util.Log.d("MyJobsFragment", "Tab reselected: " +
+                    (tab.getText() != null ? tab.getText() : "N/A") + " → Reloading...");
+                loadMyJobs();
+            }
         });
     }
 
     private void loadMyJobs() {
+        // ✅ FIX: Sync currentStatus with currently selected tab FIRST
+        if (tabLayout != null) {
+            int selectedTabPosition = tabLayout.getSelectedTabPosition();
+            String previousStatus = currentStatus;
+
+            switch (selectedTabPosition) {
+                case 0:
+                    currentStatus = "ALL";
+                    break;
+                case 1:
+                    currentStatus = "JOINED";
+                    break;
+                case 2:
+                    currentStatus = "WORKING";
+                    break;
+                case 3:
+                    currentStatus = "COMPLETED";
+                    break;
+                default:
+                    currentStatus = "ALL";
+                    break;
+            }
+            android.util.Log.d("MyJobsFragment", "🔄 SYNC: Tab position " + selectedTabPosition +
+                " → currentStatus: " + previousStatus + " → " + currentStatus);
+        }
+
         showLoading(true);
         tvEmpty.setVisibility(View.GONE);
 
@@ -580,9 +651,11 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        loadMyJobs();
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(KEY_CURRENT_STATUS, currentStatus);
+        outState.putInt(KEY_CURRENT_TAB, currentTabPosition);
+        android.util.Log.d("MyJobsFragment", "💾 Saving state: tab=" + currentTabPosition + ", status=" + currentStatus);
     }
 }
 

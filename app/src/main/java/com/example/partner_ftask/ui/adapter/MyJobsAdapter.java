@@ -119,10 +119,25 @@ public class MyJobsAdapter extends RecyclerView.Adapter<MyJobsAdapter.MyJobViewH
 
         private String getPartnerStatus(Booking booking) {
             if (booking.getPartners() != null && !booking.getPartners().isEmpty()) {
-                // Assuming the first partner in the list is current user
-                // In real app, you should filter by current partner ID
-                BookingPartner bookingPartner = booking.getPartners().get(0);
-                return bookingPartner.getStatus();
+                // ✅ FIX: Find current partner by matching partner ID
+                com.example.partner_ftask.utils.PreferenceManager prefManager =
+                    new com.example.partner_ftask.utils.PreferenceManager(itemView.getContext());
+                int currentPartnerId = prefManager.getPartnerId();
+
+                // Find current partner in the list
+                for (BookingPartner bp : booking.getPartners()) {
+                    if (bp.getPartner() != null && bp.getPartner().getId() == currentPartnerId) {
+                        android.util.Log.d("MyJobsAdapter", "✅ Found current partner status for booking #" +
+                            booking.getId() + ": " + bp.getStatus());
+                        return bp.getStatus();
+                    }
+                }
+
+                // Fallback: if no match found, return first partner status
+                // This should not happen if filtering is done correctly
+                android.util.Log.w("MyJobsAdapter", "⚠️ Current partner not found in booking #" +
+                    booking.getId() + ", using first partner");
+                return booking.getPartners().get(0).getStatus();
             }
             return "UNKNOWN";
         }

@@ -9,42 +9,71 @@ import java.util.TimeZone;
 
 public class DateTimeUtils {
 
-    private static final SimpleDateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault());
+    // Support multiple ISO date formats
+    private static final SimpleDateFormat ISO_FORMAT_WITH_TZ = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault());
+    private static final SimpleDateFormat ISO_FORMAT_WITHOUT_TZ = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+    private static final SimpleDateFormat ISO_FORMAT_WITH_MILLIS = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.getDefault());
+
     private static final SimpleDateFormat DISPLAY_DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     private static final SimpleDateFormat DISPLAY_TIME_FORMAT = new SimpleDateFormat("HH:mm", Locale.getDefault());
     private static final SimpleDateFormat DISPLAY_DATETIME_FORMAT = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
 
     static {
-        ISO_FORMAT.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        TimeZone vn = TimeZone.getTimeZone("Asia/Ho_Chi_Minh");
+        ISO_FORMAT_WITH_TZ.setTimeZone(vn);
+        ISO_FORMAT_WITHOUT_TZ.setTimeZone(vn);
+        ISO_FORMAT_WITH_MILLIS.setTimeZone(vn);
+    }
+
+    /**
+     * Parse ISO date string with multiple format support
+     */
+    private static Date parseISODate(String isoDateTime) throws ParseException {
+        if (isoDateTime == null || isoDateTime.isEmpty()) {
+            throw new ParseException("Empty date string", 0);
+        }
+
+        // Try format with timezone first
+        try {
+            return ISO_FORMAT_WITH_TZ.parse(isoDateTime);
+        } catch (ParseException e1) {
+            // Try format without timezone
+            try {
+                return ISO_FORMAT_WITHOUT_TZ.parse(isoDateTime);
+            } catch (ParseException e2) {
+                // Try format with milliseconds
+                return ISO_FORMAT_WITH_MILLIS.parse(isoDateTime);
+            }
+        }
     }
 
     public static String formatDate(String isoDateTime) {
         try {
-            Date date = ISO_FORMAT.parse(isoDateTime);
+            Date date = parseISODate(isoDateTime);
             return DISPLAY_DATE_FORMAT.format(date);
         } catch (ParseException e) {
-            e.printStackTrace();
-            return isoDateTime;
+            android.util.Log.e("DateTimeUtils", "Failed to parse date: " + isoDateTime, e);
+            return isoDateTime != null ? isoDateTime : "";
         }
     }
 
     public static String formatTime(String isoDateTime) {
         try {
-            Date date = ISO_FORMAT.parse(isoDateTime);
+            Date date = parseISODate(isoDateTime);
             return DISPLAY_TIME_FORMAT.format(date);
         } catch (ParseException e) {
-            e.printStackTrace();
-            return isoDateTime;
+            android.util.Log.e("DateTimeUtils", "Failed to parse time: " + isoDateTime, e);
+            return isoDateTime != null ? isoDateTime : "";
         }
     }
 
     public static String formatDateTime(String isoDateTime) {
         try {
-            Date date = ISO_FORMAT.parse(isoDateTime);
+            Date date = parseISODate(isoDateTime);
             return DISPLAY_DATETIME_FORMAT.format(date);
         } catch (ParseException e) {
-            e.printStackTrace();
-            return isoDateTime;
+            android.util.Log.e("DateTimeUtils", "Failed to parse datetime: " + isoDateTime, e);
+            return isoDateTime != null ? isoDateTime : "";
         }
     }
 
