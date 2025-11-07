@@ -1,16 +1,34 @@
 package com.example.partner_ftask.data.api;
 
 import com.example.partner_ftask.data.model.ApiResponse;
+import com.example.partner_ftask.data.model.AuthResponse;
 import com.example.partner_ftask.data.model.Booking;
 import com.example.partner_ftask.data.model.PageResponse;
+import com.example.partner_ftask.data.model.VerifyOtpRequest;
+import com.example.partner_ftask.data.model.Wallet;
 
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface ApiService {
+
+    // ==================== AUTHENTICATION ====================
+
+    // Verify OTP and login/register
+    @POST("auth/verify-otp")
+    Call<ApiResponse<AuthResponse>> verifyOtp(@Body VerifyOtpRequest request);
+
+    // ==================== WALLET ====================
+
+    // Get wallet information
+    @GET("users/wallet")
+    Call<ApiResponse<Wallet>> getWallet();
+
+    // ==================== BOOKINGS ====================
 
     // Get list of available bookings
     @GET("bookings")

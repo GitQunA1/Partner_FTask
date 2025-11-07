@@ -9,7 +9,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.example.partner_ftask.data.api.ApiClient;
-import com.example.partner_ftask.ui.activity.LoginActivity;
+import com.example.partner_ftask.ui.activity.OtpLoginActivity;
 import com.example.partner_ftask.ui.fragment.JobsFragment;
 import com.example.partner_ftask.ui.fragment.MyJobsFragment;
 import com.example.partner_ftask.ui.fragment.ProfileFragment;
@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void goToLogin() {
-        Intent intent = new Intent(this, LoginActivity.class);
+        Intent intent = new Intent(this, OtpLoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
