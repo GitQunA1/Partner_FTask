@@ -25,56 +25,13 @@ public class ApiClient {
 
     public static ApiService getApiService() {
         if (apiService == null) {
-            HttpLoggingInterceptor logging = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
-                @Override
-                public void log(String message) {
-                    android.util.Log.d("API_LOG", message);
-                }
-            });
-            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+            // Simple logging - only errors
+            HttpLoggingInterceptor logging = new HttpLoggingInterceptor(message ->
+                android.util.Log.d("API", message)
+            );
+            logging.setLevel(HttpLoggingInterceptor.Level.BASIC);
 
             OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
-
-            // Add custom request/response logger
-            httpClient.addInterceptor(new Interceptor() {
-                @Override
-                public Response intercept(Chain chain) throws IOException {
-                    Request request = chain.request();
-
-                    // Log request details
-                    android.util.Log.d("API_REQUEST", "╔════════════════════════════════════════════════════════════");
-                    android.util.Log.d("API_REQUEST", "║ REQUEST: " + request.method() + " " + request.url());
-                    android.util.Log.d("API_REQUEST", "║ Headers:");
-                    for (String name : request.headers().names()) {
-                        String value = request.headers().get(name);
-                        // Hide full token for security, show only first 20 chars
-                        if ("Authorization".equals(name) && value != null && value.length() > 27) {
-                            value = value.substring(0, 27) + "...";
-                        }
-                        android.util.Log.d("API_REQUEST", "║   " + name + ": " + value);
-                    }
-                    android.util.Log.d("API_REQUEST", "╚════════════════════════════════════════════════════════════");
-
-                    long startTime = System.currentTimeMillis();
-                    Response response = chain.proceed(request);
-                    long duration = System.currentTimeMillis() - startTime;
-
-                    // Log response details
-                    android.util.Log.d("API_RESPONSE", "╔════════════════════════════════════════════════════════════");
-                    android.util.Log.d("API_RESPONSE", "║ RESPONSE: " + request.method() + " " + request.url());
-                    android.util.Log.d("API_RESPONSE", "║ Status Code: " + response.code() + " " + response.message());
-                    android.util.Log.d("API_RESPONSE", "║ Duration: " + duration + "ms");
-                    android.util.Log.d("API_RESPONSE", "║ Response Headers:");
-                    for (String name : response.headers().names()) {
-                        android.util.Log.d("API_RESPONSE", "║   " + name + ": " + response.headers().get(name));
-                    }
-                    android.util.Log.d("API_RESPONSE", "╚════════════════════════════════════════════════════════════");
-
-                    return response;
-                }
-            });
-
-            httpClient.addInterceptor(logging);
 
             // Add auth interceptor
             httpClient.addInterceptor(new Interceptor() {
@@ -89,16 +46,26 @@ public class ApiClient {
                         String token = prefManager.getAccessToken();
                         if (token != null && !token.isEmpty()) {
                             requestBuilder.header("Authorization", "Bearer " + token);
-                            android.util.Log.d("API_AUTH", "✅ Token added to request");
-                        } else {
-                            android.util.Log.w("API_AUTH", "⚠️ No token found!");
                         }
                     }
 
                     Request request = requestBuilder.build();
-                    return chain.proceed(request);
+
+                    // Log request
+                    android.util.Log.d("API", request.method() + " " + request.url());
+
+                    long startTime = System.currentTimeMillis();
+                    Response response = chain.proceed(request);
+                    long duration = System.currentTimeMillis() - startTime;
+
+                    // Log response
+                    android.util.Log.d("API", "Response: " + response.code() + " (" + duration + "ms)");
+
+                    return response;
                 }
             });
+
+            httpClient.addInterceptor(logging);
 
             Retrofit retrofit = new Retrofit.Builder()
                     .baseUrl(BASE_URL)

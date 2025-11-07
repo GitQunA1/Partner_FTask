@@ -26,8 +26,6 @@ public class OtpLoginActivity extends AppCompatActivity {
     private EditText etOtp;
     private Button btnLogin;
     private ProgressBar progressBar;
-    private TextView tvInfo;
-
     private PreferenceManager preferenceManager;
     private AuthRepository authRepository;
 
@@ -50,8 +48,6 @@ public class OtpLoginActivity extends AppCompatActivity {
         etOtp = findViewById(R.id.et_otp);
         btnLogin = findViewById(R.id.btn_login);
         progressBar = findViewById(R.id.progress_bar);
-        tvInfo = findViewById(R.id.tv_info);
-
         // Pre-fill OTP with default value for testing
         etOtp.setText("123456");
 
@@ -96,37 +92,18 @@ public class OtpLoginActivity extends AppCompatActivity {
     }
 
     private void handleLoginSuccess(AuthResponse authResponse) {
-        android.util.Log.d(TAG, "========== LOGIN SUCCESS ==========");
-        android.util.Log.d(TAG, "Access Token: " + (authResponse.getAccessToken() != null ? "✓" : "✗"));
-        android.util.Log.d(TAG, "Is New User: " + authResponse.isNewUser());
-
-        if (authResponse.getUser() != null) {
-            android.util.Log.d(TAG, "User ID: " + authResponse.getUser().getId());
-            android.util.Log.d(TAG, "Full Name: " + authResponse.getUser().getFullName());
-            android.util.Log.d(TAG, "Phone: " + authResponse.getUser().getPhoneNumber());
-            android.util.Log.d(TAG, "Role: " + authResponse.getUser().getRole());
-
-            if (authResponse.getUser().getPartner() != null) {
-                android.util.Log.d(TAG, "Partner ID from API: " + authResponse.getUser().getPartner().getId());
-            } else {
-                android.util.Log.w(TAG, "⚠️ No Partner information from API");
-            }
-        }
-
         // Save authentication data
         String accessToken = authResponse.getAccessToken();
         if (accessToken != null) {
             preferenceManager.saveAccessToken(accessToken);
 
-            // ✅ CRITICAL: Extract Partner ID from JWT token (like old LoginActivity)
+            // Extract Partner ID from JWT token
             int partnerIdFromToken = com.example.partner_ftask.utils.JwtUtils.getPartnerIdFromToken(accessToken);
-            android.util.Log.d(TAG, "Partner ID from JWT Token: " + partnerIdFromToken);
-
             if (partnerIdFromToken > 0) {
                 preferenceManager.savePartnerId(partnerIdFromToken);
-                android.util.Log.d(TAG, "✅ Saved Partner ID from token: " + partnerIdFromToken);
+                android.util.Log.d(TAG, "Login OK - Partner ID: " + partnerIdFromToken);
             } else {
-                android.util.Log.w(TAG, "⚠️ Could not extract Partner ID from token");
+                android.util.Log.w(TAG, "Login OK - No Partner ID in token");
             }
         }
 
@@ -145,12 +122,11 @@ public class OtpLoginActivity extends AppCompatActivity {
             if (authResponse.getUser().getPartner() != null) {
                 int partnerIdFromApi = authResponse.getUser().getPartner().getId();
                 preferenceManager.savePartnerId(partnerIdFromApi);
-                android.util.Log.d(TAG, "✅ Also saved Partner ID from API: " + partnerIdFromApi);
+                android.util.Log.d(TAG, "Login OK - Partner ID from API: " + partnerIdFromApi);
             }
         }
 
         preferenceManager.setLoggedIn(true);
-        android.util.Log.d(TAG, "===================================");
 
         // Show success message
         String message = authResponse.isNewUser()

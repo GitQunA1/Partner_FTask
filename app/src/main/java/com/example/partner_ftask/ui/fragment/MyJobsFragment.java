@@ -99,94 +99,54 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
         tabLayout.addTab(tabLayout.newTab().setText("Đang làm"));
         tabLayout.addTab(tabLayout.newTab().setText("Hoàn thành"));
 
-        // ✅ Restore saved tab position or select first tab
+        // Restore saved tab position or select first tab
         if (currentTabPosition >= 0 && currentTabPosition < tabLayout.getTabCount()) {
             tabLayout.selectTab(tabLayout.getTabAt(currentTabPosition));
-            android.util.Log.d("MyJobsFragment", "✅ Restored tab: position " + currentTabPosition);
         } else if (tabLayout.getSelectedTabPosition() == -1) {
             tabLayout.selectTab(tabLayout.getTabAt(0));
             currentStatus = "ALL";
             currentTabPosition = 0;
-            android.util.Log.d("MyJobsFragment", "✅ Default tab selected: position 0 (Tất cả)");
         }
 
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 int position = tab.getPosition();
-                String oldStatus = currentStatus;
-
-                // Save current tab position
                 currentTabPosition = position;
 
                 switch (position) {
-                    case 0:
-                        currentStatus = "ALL";
-                        break;
-                    case 1:
-                        currentStatus = "JOINED";
-                        break;
-                    case 2:
-                        currentStatus = "WORKING";
-                        break;
-                    case 3:
-                        currentStatus = "COMPLETED";
-                        break;
-                    default:
-                        currentStatus = "ALL";
-                        break;
+                    case 0: currentStatus = "ALL"; break;
+                    case 1: currentStatus = "JOINED"; break;
+                    case 2: currentStatus = "WORKING"; break;
+                    case 3: currentStatus = "COMPLETED"; break;
+                    default: currentStatus = "ALL"; break;
                 }
 
-                android.util.Log.d("MyJobsFragment", "════════════════════════════════════════");
-                android.util.Log.d("MyJobsFragment", "📌 TAB SELECTED");
-                android.util.Log.d("MyJobsFragment", "Position: " + position +
-                    " (" + (tab.getText() != null ? tab.getText() : "N/A") + ")");
-                android.util.Log.d("MyJobsFragment", "Status: " + oldStatus + " → " + currentStatus);
-                android.util.Log.d("MyJobsFragment", "════════════════════════════════════════");
-
+                android.util.Log.d("MyJobsFragment", "Tab: " + position + " Status: " + currentStatus);
                 loadMyJobs();
             }
 
             @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-                android.util.Log.d("MyJobsFragment", "Tab unselected: " +
-                    (tab.getText() != null ? tab.getText() : "N/A"));
-            }
+            public void onTabUnselected(TabLayout.Tab tab) {}
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
-                android.util.Log.d("MyJobsFragment", "Tab reselected: " +
-                    (tab.getText() != null ? tab.getText() : "N/A") + " → Reloading...");
                 loadMyJobs();
             }
         });
     }
 
     private void loadMyJobs() {
-        // ✅ FIX: Sync currentStatus with currently selected tab FIRST
+        // Sync currentStatus with currently selected tab
         if (tabLayout != null) {
             int selectedTabPosition = tabLayout.getSelectedTabPosition();
-            String previousStatus = currentStatus;
-
             switch (selectedTabPosition) {
-                case 0:
-                    currentStatus = "ALL";
-                    break;
-                case 1:
-                    currentStatus = "JOINED";
-                    break;
-                case 2:
-                    currentStatus = "WORKING";
-                    break;
-                case 3:
-                    currentStatus = "COMPLETED";
-                    break;
-                default:
-                    currentStatus = "ALL";
-                    break;
+                case 0: currentStatus = "ALL"; break;
+                case 1: currentStatus = "JOINED"; break;
+                case 2: currentStatus = "WORKING"; break;
+                case 3: currentStatus = "COMPLETED"; break;
+                default: currentStatus = "ALL"; break;
             }
-            android.util.Log.d("MyJobsFragment", "🔄 SYNC: Tab position " + selectedTabPosition +
-                " → currentStatus: " + previousStatus + " → " + currentStatus);
         }
 
         showLoading(true);
@@ -246,14 +206,9 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
             new com.example.partner_ftask.utils.PreferenceManager(requireContext());
         int currentPartnerId = prefManager.getPartnerId();
 
-        android.util.Log.d("MyJobsFragment", "Filter - Current Partner ID: " + currentPartnerId);
-        android.util.Log.d("MyJobsFragment", "Filter - Current Status Filter: " + currentStatus);
-        android.util.Log.d("MyJobsFragment", "Filter - Total bookings to check: " + bookings.size());
-
-        // ⚠️ IMPORTANT: If no partnerId, don't show any bookings
+        // If no partnerId, don't show any bookings
         if (currentPartnerId <= 0) {
-            android.util.Log.w("MyJobsFragment", "⚠️ No Partner ID found! Cannot filter bookings.");
-            android.util.Log.w("MyJobsFragment", "Please implement proper authentication to get Partner ID from token.");
+            android.util.Log.w("MyJobsFragment", "No Partner ID! Cannot filter bookings.");
             return filtered;  // Return empty list
         }
 
@@ -265,40 +220,24 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                 for (BookingPartner bp : booking.getPartners()) {
                     if (bp.getPartner() != null && bp.getPartner().getId() == currentPartnerId) {
                         currentPartner = bp;
-                        android.util.Log.d("MyJobsFragment", "✅ Found current partner in booking #" + booking.getId());
                         break;
                     }
                 }
-
-                // ❌ REMOVED FALLBACK - Don't assume first partner is current user
-                // This was causing the bug where different partners see the same bookings
 
                 // If current partner found in this booking
                 if (currentPartner != null) {
                     String partnerStatus = currentPartner.getStatus();
 
-                    android.util.Log.d("MyJobsFragment", "Booking #" + booking.getId() +
-                        " - Partner Status: " + partnerStatus +
-                        " - Service: " + (booking.getVariant() != null ? booking.getVariant().getName() : "N/A"));
-
                     // Filter based on selected tab
                     if ("ALL".equals(currentStatus)) {
-                        // Show all bookings where current partner is involved
                         filtered.add(booking);
-                    } else {
-                        // Filter by specific partner status
-                        if (currentStatus.equals(partnerStatus)) {
-                            filtered.add(booking);
-                            android.util.Log.d("MyJobsFragment", "  ✅ Added to filtered list");
-                        } else {
-                            android.util.Log.d("MyJobsFragment", "  ❌ Skipped (status doesn't match)");
-                        }
+                    } else if (currentStatus.equals(partnerStatus)) {
+                        filtered.add(booking);
                     }
                 }
             }
         }
 
-        android.util.Log.d("MyJobsFragment", "Filter result: " + filtered.size() + " bookings");
         return filtered;
     }
 
