@@ -209,22 +209,37 @@
             </androidx.cardview.widget.CardView>
 
             <!-- View Wallet Button -->
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_view_wallet"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Xem chi tiết ví"
-                android:textColor="@android:color/white" />
+                android:text="💰 Xem chi tiết ví"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/primary"
+                app:cornerRadius="8dp" />
+
+            <!-- View Reviews Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_view_reviews"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="⭐ Xem đánh giá của tôi"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/accent"
+                app:cornerRadius="8dp" />
 
             <!-- Logout Button -->
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_logout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Đăng xuất"
-                android:textColor="@android:color/white" />
+                android:text="🚪 Đăng xuất"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/error"
+                app:cornerRadius="8dp" />
 
         </LinearLayout>
 

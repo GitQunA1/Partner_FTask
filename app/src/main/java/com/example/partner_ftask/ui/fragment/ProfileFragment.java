@@ -33,6 +33,7 @@ public class ProfileFragment extends Fragment {
     private Button btnLogout;
     private Button btnRefreshWallet;
     private Button btnViewWallet;
+    private Button btnViewReviews;
     private ProgressBar progressBar;
 
     private PreferenceManager preferenceManager;
@@ -56,6 +57,7 @@ public class ProfileFragment extends Fragment {
         tvTotalWithdrawn = view.findViewById(R.id.tv_total_withdrawn);
         btnLogout = view.findViewById(R.id.btn_logout);
         btnRefreshWallet = view.findViewById(R.id.btn_refresh_wallet);
+        btnViewReviews = view.findViewById(R.id.btn_view_reviews);
         btnViewWallet = view.findViewById(R.id.btn_view_wallet);
         progressBar = view.findViewById(R.id.progress_bar);
 
@@ -72,6 +74,7 @@ public class ProfileFragment extends Fragment {
         // Setup buttons
         btnLogout.setOnClickListener(v -> showLogoutDialog());
         btnRefreshWallet.setOnClickListener(v -> loadWalletInfo());
+        btnViewReviews.setOnClickListener(v -> openReviewsActivity());
         btnViewWallet.setOnClickListener(v -> openWalletActivity());
     }
 
@@ -149,6 +152,11 @@ public class ProfileFragment extends Fragment {
 
     private void openWalletActivity() {
         Intent intent = new Intent(requireContext(), WalletActivity.class);
+        startActivity(intent);
+    }
+
+    private void openReviewsActivity() {
+        Intent intent = new Intent(requireContext(), com.example.partner_ftask.ui.activity.ReviewsActivity.class);
         startActivity(intent);
     }
 
