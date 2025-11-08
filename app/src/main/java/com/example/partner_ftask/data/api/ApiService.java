@@ -4,8 +4,12 @@ import com.example.partner_ftask.data.model.ApiResponse;
 import com.example.partner_ftask.data.model.AuthResponse;
 import com.example.partner_ftask.data.model.Booking;
 import com.example.partner_ftask.data.model.PageResponse;
+import com.example.partner_ftask.data.model.Review;
+import com.example.partner_ftask.data.model.Transaction;
 import com.example.partner_ftask.data.model.VerifyOtpRequest;
 import com.example.partner_ftask.data.model.Wallet;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -27,6 +31,19 @@ public interface ApiService {
     // Get wallet information
     @GET("users/wallet")
     Call<ApiResponse<Wallet>> getWallet();
+
+    // Get user transactions with pagination
+    @GET("users/transactions")
+    Call<ApiResponse<PageResponse<Transaction>>> getUserTransactions(
+            @Query("page") int page,
+            @Query("size") int size
+    );
+
+    // ==================== REVIEWS ====================
+
+    // Get partner reviews
+    @GET("partners/{partnerId}/reviews")
+    Call<ApiResponse<List<Review>>> getPartnerReviews(@Path("partnerId") int partnerId);
 
     // ==================== BOOKINGS ====================
 
