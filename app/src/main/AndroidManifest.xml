@@ -46,6 +46,11 @@
             android:name=".ui.activity.WalletActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ui.activity.ReviewsActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
     </application>
 
 </manifest>
