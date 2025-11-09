@@ -44,6 +44,7 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
     private ProgressBar progressBar;
     private TextView tvEmpty;
     private ApiService apiService;
+    private com.example.partner_ftask.utils.PreferenceManager preferenceManager;
 
     private static final String KEY_CURRENT_STATUS = "current_status";
     private static final String KEY_CURRENT_TAB = "current_tab";
@@ -82,6 +83,8 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
 
         // Initialize API service
         apiService = ApiClient.getApiService();
+
+        preferenceManager = new com.example.partner_ftask.utils.PreferenceManager(requireContext());
 
         // Setup tabs
         setupTabs();
@@ -159,6 +162,8 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                 .enqueue(new Callback<ApiResponse<PageResponse<Booking>>>() {
                     @Override
                     public void onResponse(Call<ApiResponse<PageResponse<Booking>>> call, Response<ApiResponse<PageResponse<Booking>>> response) {
+                        if (!isAdded()) return;
+
                         showLoading(false);
                         swipeRefresh.setRefreshing(false);
 
@@ -169,29 +174,35 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                                 List<Booking> myBookings = filterMyBookings(allBookings);
 
                                 if (myBookings != null && !myBookings.isEmpty()) {
-                                    // Có data → Hiện RecyclerView, ẩn empty text
                                     recyclerView.setVisibility(View.VISIBLE);
                                     tvEmpty.setVisibility(View.GONE);
                                     adapter.setBookings(myBookings);
                                 } else {
-                                    // Không có data → Ẩn RecyclerView, hiện empty text
                                     recyclerView.setVisibility(View.GONE);
                                     tvEmpty.setVisibility(View.VISIBLE);
-                                    adapter.setBookings(new ArrayList<>());  // Clear adapter
+                                    adapter.setBookings(new ArrayList<>());
                                 }
                             } else {
-                                Toast.makeText(requireContext(), apiResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                                if (getContext() != null) {
+                                    Toast.makeText(getContext(), apiResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
                             }
                         } else {
-                            Toast.makeText(requireContext(), "Lỗi khi tải dữ liệu", Toast.LENGTH_SHORT).show();
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(), "Lỗi khi tải dữ liệu", Toast.LENGTH_SHORT).show();
+                            }
                         }
                     }
 
                     @Override
                     public void onFailure(Call<ApiResponse<PageResponse<Booking>>> call, Throwable t) {
+                        if (!isAdded()) return;
+
                         showLoading(false);
                         swipeRefresh.setRefreshing(false);
-                        Toast.makeText(requireContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
     }
@@ -201,10 +212,11 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
 
         if (bookings == null) return filtered;
 
-        // Get current partner ID
-        com.example.partner_ftask.utils.PreferenceManager prefManager =
-            new com.example.partner_ftask.utils.PreferenceManager(requireContext());
-        int currentPartnerId = prefManager.getPartnerId();
+        if (!isAdded() || preferenceManager == null) {
+            return filtered;
+        }
+
+        int currentPartnerId = preferenceManager.getPartnerId();
 
         // If no partnerId, don't show any bookings
         if (currentPartnerId <= 0) {
@@ -297,15 +309,16 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
         android.util.Log.d("MyJobsFragment", "Booking ID: " + bookingId);
         android.util.Log.d("MyJobsFragment", "Endpoint: POST /partners/bookings/" + bookingId + "/start");
 
-        // Check token
-        com.example.partner_ftask.utils.PreferenceManager prefManager =
-            new com.example.partner_ftask.utils.PreferenceManager(requireContext());
-        String token = prefManager.getAccessToken();
+        if (!isAdded() || preferenceManager == null) return;
+
+        String token = preferenceManager.getAccessToken();
         android.util.Log.d("MyJobsFragment", "Token exists: " + (token != null && !token.isEmpty()));
 
         apiService.startBooking(bookingId).enqueue(new Callback<ApiResponse<Booking>>() {
             @Override
             public void onResponse(Call<ApiResponse<Booking>> call, Response<ApiResponse<Booking>> response) {
+                if (!isAdded()) return;
+
                 showLoading(false);
 
                 // Log response details
@@ -328,11 +341,15 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
 
                     if (apiResponse.getCode() == 200) {
                         android.util.Log.d("MyJobsFragment", "✅ START SUCCESS!");
-                        Toast.makeText(requireContext(), "Đã bắt đầu công việc!", Toast.LENGTH_SHORT).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Đã bắt đầu công việc!", Toast.LENGTH_SHORT).show();
+                        }
                         loadMyJobs();
                     } else {
                         android.util.Log.e("MyJobsFragment", "❌ START FAILED - API Error Code: " + apiResponse.getCode());
-                        Toast.makeText(requireContext(), "Lỗi: " + apiResponse.getMessage(), Toast.LENGTH_LONG).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Lỗi: " + apiResponse.getMessage(), Toast.LENGTH_LONG).show();
+                        }
                     }
                 } else {
                     // Get error body
@@ -359,7 +376,9 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                         errorMessage = "Trạng thái không hợp lệ để bắt đầu! (Phải JOINED trước)";
                     }
 
-                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
+                    }
                 }
                 android.util.Log.d("MyJobsFragment", "==========================================");
             }
@@ -384,28 +403,30 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                     errorMessage += t.getMessage();
                 }
 
-                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+                if (getContext() != null) {
+                    Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
 
     private void completeBooking(int bookingId) {
+        if (!isAdded() || preferenceManager == null) return;
+
         showLoading(true);
 
-        // Log request details
         android.util.Log.d("MyJobsFragment", "========== COMPLETE BOOKING REQUEST ==========");
         android.util.Log.d("MyJobsFragment", "Booking ID: " + bookingId);
         android.util.Log.d("MyJobsFragment", "Endpoint: POST /partners/bookings/" + bookingId + "/complete");
 
-        // Check token
-        com.example.partner_ftask.utils.PreferenceManager prefManager =
-            new com.example.partner_ftask.utils.PreferenceManager(requireContext());
-        String token = prefManager.getAccessToken();
+        String token = preferenceManager.getAccessToken();
         android.util.Log.d("MyJobsFragment", "Token exists: " + (token != null && !token.isEmpty()));
 
         apiService.completeBooking(bookingId).enqueue(new Callback<ApiResponse<Booking>>() {
             @Override
             public void onResponse(Call<ApiResponse<Booking>> call, Response<ApiResponse<Booking>> response) {
+                if (!isAdded()) return;
+
                 showLoading(false);
 
                 // Log response details
@@ -428,11 +449,15 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
 
                     if (apiResponse.getCode() == 200) {
                         android.util.Log.d("MyJobsFragment", "✅ COMPLETE SUCCESS!");
-                        Toast.makeText(requireContext(), "Đã hoàn thành công việc!", Toast.LENGTH_SHORT).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Đã hoàn thành công việc!", Toast.LENGTH_SHORT).show();
+                        }
                         loadMyJobs();
                     } else {
                         android.util.Log.e("MyJobsFragment", "❌ COMPLETE FAILED - API Error Code: " + apiResponse.getCode());
-                        Toast.makeText(requireContext(), "Lỗi: " + apiResponse.getMessage(), Toast.LENGTH_LONG).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Lỗi: " + apiResponse.getMessage(), Toast.LENGTH_LONG).show();
+                        }
                     }
                 } else {
                     // Get error body
@@ -459,16 +484,19 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                         errorMessage = "Trạng thái không hợp lệ! (Phải WORKING trước)";
                     }
 
-                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
+                    }
                 }
                 android.util.Log.d("MyJobsFragment", "==========================================");
             }
 
             @Override
             public void onFailure(Call<ApiResponse<Booking>> call, Throwable t) {
+                if (!isAdded()) return;
+
                 showLoading(false);
 
-                // Log failure details
                 android.util.Log.e("MyJobsFragment", "========== COMPLETE BOOKING FAILED ==========");
                 android.util.Log.e("MyJobsFragment", "Error Type: " + t.getClass().getSimpleName());
                 android.util.Log.e("MyJobsFragment", "Error Message: " + t.getMessage());
@@ -484,28 +512,30 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                     errorMessage += t.getMessage();
                 }
 
-                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+                if (getContext() != null) {
+                    Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
 
     private void cancelBooking(int bookingId) {
+        if (!isAdded() || preferenceManager == null) return;
+
         showLoading(true);
 
-        // Log request details
         android.util.Log.d("MyJobsFragment", "========== CANCEL BOOKING REQUEST ==========");
         android.util.Log.d("MyJobsFragment", "Booking ID: " + bookingId);
         android.util.Log.d("MyJobsFragment", "Endpoint: POST /partners/bookings/" + bookingId + "/cancel");
 
-        // Check token
-        com.example.partner_ftask.utils.PreferenceManager prefManager =
-            new com.example.partner_ftask.utils.PreferenceManager(requireContext());
-        String token = prefManager.getAccessToken();
+        String token = preferenceManager.getAccessToken();
         android.util.Log.d("MyJobsFragment", "Token exists: " + (token != null && !token.isEmpty()));
 
         apiService.cancelBooking(bookingId).enqueue(new Callback<ApiResponse<Booking>>() {
             @Override
             public void onResponse(Call<ApiResponse<Booking>> call, Response<ApiResponse<Booking>> response) {
+                if (!isAdded()) return;
+
                 showLoading(false);
 
                 // Log response details
@@ -528,11 +558,15 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
 
                     if (apiResponse.getCode() == 200) {
                         android.util.Log.d("MyJobsFragment", "✅ CANCEL SUCCESS!");
-                        Toast.makeText(requireContext(), "Đã hủy công việc!", Toast.LENGTH_SHORT).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Đã hủy công việc!", Toast.LENGTH_SHORT).show();
+                        }
                         loadMyJobs();
                     } else {
                         android.util.Log.e("MyJobsFragment", "❌ CANCEL FAILED - API Error Code: " + apiResponse.getCode());
-                        Toast.makeText(requireContext(), "Lỗi: " + apiResponse.getMessage(), Toast.LENGTH_LONG).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Lỗi: " + apiResponse.getMessage(), Toast.LENGTH_LONG).show();
+                        }
                     }
                 } else {
                     // Get error body
@@ -559,16 +593,19 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                         errorMessage = "Không thể hủy ở trạng thái hiện tại!";
                     }
 
-                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
+                    }
                 }
                 android.util.Log.d("MyJobsFragment", "==========================================");
             }
 
             @Override
             public void onFailure(Call<ApiResponse<Booking>> call, Throwable t) {
+                if (!isAdded()) return;
+
                 showLoading(false);
 
-                // Log failure details
                 android.util.Log.e("MyJobsFragment", "========== CANCEL BOOKING FAILED ==========");
                 android.util.Log.e("MyJobsFragment", "Error Type: " + t.getClass().getSimpleName());
                 android.util.Log.e("MyJobsFragment", "Error Message: " + t.getMessage());
@@ -584,7 +621,9 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                     errorMessage += t.getMessage();
                 }
 
-                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+                if (getContext() != null) {
+                    Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
+                }
             }
         });
     }

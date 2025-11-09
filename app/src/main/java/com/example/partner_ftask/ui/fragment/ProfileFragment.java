@@ -18,7 +18,7 @@ import androidx.fragment.app.Fragment;
 import com.example.partner_ftask.R;
 import com.example.partner_ftask.data.model.Wallet;
 import com.example.partner_ftask.data.repository.AuthRepository;
-import com.example.partner_ftask.ui.activity.OtpLoginActivity;
+import com.example.partner_ftask.ui.activity.PhoneLoginActivity;
 import com.example.partner_ftask.ui.activity.WalletActivity;
 import com.example.partner_ftask.utils.DateTimeUtils;
 import com.example.partner_ftask.utils.PreferenceManager;
@@ -174,7 +174,7 @@ public class ProfileFragment extends Fragment {
         preferenceManager.clearAll();
 
         // Go to login activity
-        Intent intent = new Intent(requireContext(), OtpLoginActivity.class);
+        Intent intent = new Intent(requireContext(), PhoneLoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         requireActivity().finish();
