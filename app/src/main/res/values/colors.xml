@@ -3,40 +3,70 @@
     <!-- Base Colors -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="transparent">#00000000</color>
 
-    <!-- Primary Colors - Blue Theme -->
-    <color name="primary">#2196F3</color>
-    <color name="primary_dark">#1976D2</color>
-    <color name="primary_light">#BBDEFB</color>
-    <color name="accent">#FF9800</color>
+    <!-- Primary Colors - Modern Gradient Blue/Purple -->
+    <color name="primary">#6366F1</color>              <!-- Indigo 500 -->
+    <color name="primary_dark">#4F46E5</color>         <!-- Indigo 600 -->
+    <color name="primary_light">#818CF8</color>        <!-- Indigo 400 -->
+    <color name="accent">#F59E0B</color>               <!-- Amber 500 -->
+    <color name="accent_light">#FCD34D</color>         <!-- Amber 300 -->
+
+    <!-- Status Colors -->
+    <color name="success">#10B981</color>              <!-- Green 500 -->
+    <color name="success_light">#D1FAE5</color>        <!-- Green 100 -->
+    <color name="warning">#F59E0B</color>              <!-- Amber 500 -->
+    <color name="warning_light">#FEF3C7</color>        <!-- Amber 100 -->
+    <color name="error">#EF4444</color>                <!-- Red 500 -->
+    <color name="error_light">#FEE2E2</color>          <!-- Red 100 -->
+    <color name="info">#3B82F6</color>                 <!-- Blue 500 -->
+    <color name="info_light">#DBEAFE</color>           <!-- Blue 100 -->
+
+    <!-- Text Colors -->
+    <color name="text_primary">#1F2937</color>         <!-- Gray 800 -->
+    <color name="text_secondary">#6B7280</color>       <!-- Gray 500 -->
+    <color name="text_tertiary">#9CA3AF</color>        <!-- Gray 400 -->
+    <color name="text_hint">#D1D5DB</color>            <!-- Gray 300 -->
+    <color name="text_white">#FFFFFF</color>
 
     <!-- Background Colors -->
-    <color name="background">#F5F5F5</color>
+    <color name="background">#F9FAFB</color>           <!-- Gray 50 -->
+    <color name="background_white">#FFFFFF</color>
     <color name="card_background">#FFFFFF</color>
     <color name="surface">#FFFFFF</color>
 
-    <!-- Text Colors -->
-    <color name="text_primary">#212121</color>
-    <color name="text_secondary">#757575</color>
-    <color name="text_hint">#BDBDBD</color>
-    <color name="text_white">#FFFFFF</color>
-
-    <!-- Status Colors -->
-    <color name="success">#4CAF50</color>
-    <color name="warning">#FF9800</color>
-    <color name="error">#F44336</color>
-    <color name="info">#2196F3</color>
-
-    <!-- Transaction Colors -->
-    <color name="earning_green">#4CAF50</color>
-    <color name="withdrawal_red">#F44336</color>
-    <color name="pending_orange">#FF9800</color>
-
-    <!-- Rating Colors -->
-    <color name="star_filled">#FFC107</color>
-    <color name="star_empty">#E0E0E0</color>
-
     <!-- Border & Divider -->
-    <color name="divider">#E0E0E0</color>
-    <color name="border">#BDBDBD</color>
+    <color name="border">#E5E7EB</color>               <!-- Gray 200 -->
+    <color name="divider">#F3F4F6</color>              <!-- Gray 100 -->
+
+    <!-- Gradient Colors -->
+    <color name="gradient_start">#6366F1</color>       <!-- Indigo -->
+    <color name="gradient_middle">#7C3AED</color>      <!-- Violet -->
+    <color name="gradient_end">#8B5CF6</color>         <!-- Purple -->
+
+    <!-- Booking Status Colors -->
+    <color name="status_pending">#3B82F6</color>       <!-- Blue -->
+    <color name="status_pending_bg">#EFF6FF</color>    <!-- Blue 50 -->
+    <color name="status_accepted">#10B981</color>      <!-- Green -->
+    <color name="status_accepted_bg">#ECFDF5</color>   <!-- Green 50 -->
+    <color name="status_in_progress">#F59E0B</color>   <!-- Amber -->
+    <color name="status_in_progress_bg">#FFFBEB</color> <!-- Amber 50 -->
+    <color name="status_completed">#6B7280</color>     <!-- Gray -->
+    <color name="status_completed_bg">#F9FAFB</color>  <!-- Gray 50 -->
+    <color name="status_cancelled">#EF4444</color>     <!-- Red -->
+    <color name="status_cancelled_bg">#FEF2F2</color>  <!-- Red 50 -->
+
+    <!-- Price Colors -->
+    <color name="price">#EF4444</color>                <!-- Red 500 -->
+    <color name="price_positive">#10B981</color>       <!-- Green 500 -->
+    <color name="price_negative">#EF4444</color>       <!-- Red 500 -->
+
+    <!-- Shadow -->
+    <color name="shadow">#1A000000</color>             <!-- Black with 10% opacity -->
+    <color name="shadow_light">#0D000000</color>       <!-- Black with 5% opacity -->
+
+    <!-- Special Colors -->
+    <color name="overlay">#80000000</color>            <!-- Black with 50% opacity -->
+    <color name="shimmer">#E0E0E0</color>
 </resources>
+

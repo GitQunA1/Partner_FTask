@@ -11,6 +11,7 @@ public class PreferenceManager {
     private static final String KEY_FULL_NAME = "full_name";
     private static final String KEY_PHONE_NUMBER = "phone_number";
     private static final String KEY_IS_LOGGED_IN = "is_logged_in";
+    private static final String KEY_FCM_TOKEN = "fcm_token";
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
@@ -72,6 +73,15 @@ public class PreferenceManager {
 
     public boolean isLoggedIn() {
         return sharedPreferences.getBoolean(KEY_IS_LOGGED_IN, false);
+    }
+
+    public void saveFcmToken(String fcmToken) {
+        editor.putString(KEY_FCM_TOKEN, fcmToken);
+        editor.apply();
+    }
+
+    public String getFcmToken() {
+        return sharedPreferences.getString(KEY_FCM_TOKEN, null);
     }
 
     public void clearAll() {

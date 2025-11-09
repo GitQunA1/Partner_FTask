@@ -12,6 +12,7 @@ import com.example.partner_ftask.data.api.ApiClient;
 import com.example.partner_ftask.ui.activity.OtpLoginActivity;
 import com.example.partner_ftask.ui.fragment.JobsFragment;
 import com.example.partner_ftask.ui.fragment.MyJobsFragment;
+import com.example.partner_ftask.ui.fragment.NotificationFragment;
 import com.example.partner_ftask.ui.fragment.ProfileFragment;
 import com.example.partner_ftask.utils.PreferenceManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -61,6 +62,8 @@ public class MainActivity extends AppCompatActivity {
                 fragment = new JobsFragment();
             } else if (itemId == R.id.nav_my_jobs) {
                 fragment = new MyJobsFragment();
+            } else if (itemId == R.id.nav_notifications) {
+                fragment = new NotificationFragment();
             } else if (itemId == R.id.nav_profile) {
                 fragment = new ProfileFragment();
             }

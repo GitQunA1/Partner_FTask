@@ -5,8 +5,11 @@ import com.example.partner_ftask.data.model.AuthResponse;
 import com.example.partner_ftask.data.model.Booking;
 import com.example.partner_ftask.data.model.PageResponse;
 import com.example.partner_ftask.data.model.Review;
+import com.example.partner_ftask.data.model.StartByQrRequest;
 import com.example.partner_ftask.data.model.TopUpResponse;
 import com.example.partner_ftask.data.model.Transaction;
+import com.example.partner_ftask.data.model.UnreadCountResponse;
+import com.example.partner_ftask.data.model.UpdateUserInfoRequest;
 import com.example.partner_ftask.data.model.VerifyOtpRequest;
 import com.example.partner_ftask.data.model.Wallet;
 
@@ -16,6 +19,7 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -37,7 +41,15 @@ public interface ApiService {
     @POST("wallets/top-up")
     Call<ApiResponse<TopUpResponse>> topUpWallet(
             @Query("amount") double amount,
-            @Query("returnUrl") String returnUrl
+            @Query("callbackUrl") String callbackUrl
+    );
+
+    // Confirm payment after VNPay callback
+    @GET("payments/confirm")
+    Call<ApiResponse<String>> confirmPayment(
+            @Query("vnp_OrderInfo") String orderInfo,
+            @Query("vnp_ResponseCode") String responseCode,
+            @Query("vnp_TransactionStatus") String transactionStatus
     );
 
     // Withdrawal from wallet
@@ -59,17 +71,31 @@ public interface ApiService {
 
     // ==================== BOOKINGS ====================
 
-    // Get list of available bookings
+    /**
+     * Get list of bookings with pagination and filters
+     * @param page Page number (starts from 1), default: 1
+     * @param size Items per page, default: 10
+     * @param status Filter by status (comma separated for multiple), e.g., "PENDING,COMPLETED"
+     * @param fromDate Filter bookings from date (ISO 8601), e.g., "2025-10-30T00:00:00+07:00"
+     * @param toDate Filter bookings to date (ISO 8601), e.g., "2025-11-09T23:59:59+07:00"
+     * @param minPrice Filter bookings with price >= this value
+     * @param maxPrice Filter bookings with price <= this value
+     * @param address Filter by address (search string)
+     * @param customerId Filter by customer user ID
+     * @param partnerId Filter by partner ID
+     */
     @GET("bookings")
     Call<ApiResponse<PageResponse<Booking>>> getBookings(
+            @Query("page") Integer page,
+            @Query("size") Integer size,
             @Query("status") String status,
-            @Query("page") int page,
-            @Query("size") int size,
             @Query("fromDate") String fromDate,
             @Query("toDate") String toDate,
             @Query("minPrice") Double minPrice,
             @Query("maxPrice") Double maxPrice,
-            @Query("address") String address
+            @Query("address") String address,
+            @Query("customerId") Integer customerId,
+            @Query("partnerId") Integer partnerId
     );
 
     // Get booking detail
@@ -84,6 +110,10 @@ public interface ApiService {
     @POST("partners/bookings/{bookingId}/start")
     Call<ApiResponse<Booking>> startBooking(@Path("bookingId") int bookingId);
 
+    // Start booking by QR code
+    @POST("partners/bookings/start-by-qr")
+    Call<ApiResponse<Booking>> startBookingByQr(@Body StartByQrRequest request);
+
     // Complete a booking
     @POST("partners/bookings/{bookingId}/complete")
     Call<ApiResponse<Booking>> completeBooking(@Path("bookingId") int bookingId);
@@ -91,5 +121,29 @@ public interface ApiService {
     // Cancel a booking
     @POST("partners/bookings/{bookingId}/cancel")
     Call<ApiResponse<Booking>> cancelBooking(@Path("bookingId") int bookingId);
+
+    // ==================== NOTIFICATIONS ====================
+
+    // Get all notifications
+    @GET("notifications")
+    Call<ApiResponse<List<com.example.partner_ftask.data.model.Notification>>> getAllNotifications();
+
+    // Get unread count
+    @GET("notifications/unread-count")
+    Call<ApiResponse<UnreadCountResponse>> getUnreadCount();
+
+    // Mark notification as read
+    @PUT("notifications/{notificationId}/read")
+    Call<ApiResponse<String>> markNotificationAsRead(@Path("notificationId") int notificationId);
+
+    // Mark all notifications as read
+    @PUT("notifications/read-all")
+    Call<ApiResponse<String>> markAllNotificationsAsRead();
+
+    // ==================== USER ====================
+
+    // Update user info (including FCM token)
+    @PUT("users/update-info")
+    Call<ApiResponse<com.example.partner_ftask.data.model.User>> updateUserInfo(@Body UpdateUserInfoRequest request);
 }
 

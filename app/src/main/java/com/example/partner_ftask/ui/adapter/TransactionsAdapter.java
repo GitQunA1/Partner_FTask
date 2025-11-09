@@ -76,12 +76,18 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapte
         public void bind(Transaction transaction) {
             // Description
             if (tvDescription != null) {
-                tvDescription.setText(transaction.getDescription());
+                String description = transaction.getDescription();
+                tvDescription.setText(description != null ? description : "Giao dịch");
             }
 
             // Date
             if (tvDate != null) {
-                tvDate.setText(DateTimeUtils.formatDateTime(transaction.getCreatedAt()));
+                String createdAt = transaction.getCreatedAt();
+                if (createdAt != null && !createdAt.isEmpty()) {
+                    tvDate.setText(DateTimeUtils.formatDateTime(createdAt));
+                } else {
+                    tvDate.setText("--/--/----");
+                }
             }
 
             // Type & Amount

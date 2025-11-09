@@ -123,14 +123,12 @@ public class WalletActivity extends AppCompatActivity {
         if (data != null && "partnerftask".equals(data.getScheme())) {
             String responseCode = data.getQueryParameter("vnp_ResponseCode");
             String transactionStatus = data.getQueryParameter("vnp_TransactionStatus");
-            String txnRef = data.getQueryParameter("vnp_TxnRef");
+            String orderInfo = data.getQueryParameter("vnp_OrderInfo");
 
             if ("00".equals(responseCode) && "00".equals(transactionStatus)) {
-                // Payment successful
-                Toast.makeText(this, "Nạp tiền thành công!", Toast.LENGTH_LONG).show();
-                // Reload wallet info
-                loadWalletInfo();
-                loadTransactions(true);
+                // Payment successful - Need to confirm with backend
+                progressBar.setVisibility(View.VISIBLE);
+                confirmPaymentWithBackend(orderInfo, responseCode, transactionStatus);
             } else {
                 // Payment failed
                 String message = getPaymentErrorMessage(responseCode);
@@ -138,6 +136,47 @@ public class WalletActivity extends AppCompatActivity {
             }
         }
     }
+
+    private void confirmPaymentWithBackend(String orderInfo, String responseCode, String transactionStatus) {
+        // Call backend to confirm payment and update wallet
+        apiService.confirmPayment(orderInfo, responseCode, transactionStatus)
+                .enqueue(new Callback<ApiResponse<String>>() {
+                    @Override
+                    public void onResponse(Call<ApiResponse<String>> call,
+                                          Response<ApiResponse<String>> response) {
+                        progressBar.setVisibility(View.GONE);
+
+                        if (response.isSuccessful() && response.body() != null) {
+                            ApiResponse<String> apiResponse = response.body();
+                            if (apiResponse.getCode() == 200) {
+                                Toast.makeText(WalletActivity.this,
+                                    "Nạp tiền thành công!", Toast.LENGTH_LONG).show();
+
+                                // Reload wallet info after successful confirmation
+                                loadWalletInfo();
+                                loadTransactions(true);
+                            } else {
+                                Toast.makeText(WalletActivity.this,
+                                    "Xác nhận thanh toán thất bại: " + apiResponse.getMessage(),
+                                    Toast.LENGTH_LONG).show();
+                            }
+                        } else {
+                            Toast.makeText(WalletActivity.this,
+                                "Không thể xác nhận thanh toán với server",
+                                Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ApiResponse<String>> call, Throwable t) {
+                        progressBar.setVisibility(View.GONE);
+                        Toast.makeText(WalletActivity.this,
+                            "Lỗi kết nối khi xác nhận: " + t.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
 
     private String getPaymentErrorMessage(String responseCode) {
         if (responseCode == null) return "Không xác định";
@@ -399,10 +438,10 @@ public class WalletActivity extends AppCompatActivity {
     private void processTopUp(double amount) {
         progressBar.setVisibility(View.VISIBLE);
 
-        // Create deep link return URL
-        String returnUrl = "partnerftask://payment/vnpay-return";
+        // Create deep link callback URL for app
+        String callbackUrl = "partnerftask://payment/vnpay-return";
 
-        apiService.topUpWallet(amount, returnUrl).enqueue(new Callback<ApiResponse<TopUpResponse>>() {
+        apiService.topUpWallet(amount, callbackUrl).enqueue(new Callback<ApiResponse<TopUpResponse>>() {
             @Override
             public void onResponse(Call<ApiResponse<TopUpResponse>> call,
                                    Response<ApiResponse<TopUpResponse>> response) {
@@ -450,11 +489,12 @@ public class WalletActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<Wallet> apiResponse = response.body();
                     if (apiResponse.getCode() == 200 && apiResponse.getResult() != null) {
-                        currentWallet = apiResponse.getResult();
-                        displayWalletInfo(currentWallet);
-                        loadTransactions(true);
                         Toast.makeText(WalletActivity.this,
                                 "Rút tiền thành công", Toast.LENGTH_SHORT).show();
+
+                        // Reload wallet info to get updated balance
+                        loadWalletInfo();
+                        loadTransactions(true);
                     } else {
                         showError(apiResponse.getMessage());
                     }

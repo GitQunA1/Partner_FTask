@@ -3,6 +3,7 @@ package com.example.partner_ftask.utils;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -95,5 +96,76 @@ public class DateTimeUtils {
             }
         }
     }
-}
 
+    /**
+     * Format time range: "HH:mm - HH:mm"
+     * Example: "07:00 - 11:00"
+     */
+    public static String formatTimeRange(String startAt, int durationHours) {
+        try {
+            Date startDate = parseISODate(startAt);
+            String startTime = DISPLAY_TIME_FORMAT.format(startDate);
+
+            // Calculate end time
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(startDate);
+            cal.add(Calendar.HOUR_OF_DAY, durationHours);
+            String endTime = DISPLAY_TIME_FORMAT.format(cal.getTime());
+
+            return startTime + " - " + endTime;
+        } catch (ParseException e) {
+            android.util.Log.e("DateTimeUtils", "Failed to format time range", e);
+            return "";
+        }
+    }
+
+    /**
+     * Get date label: "Hôm nay", "Ngày mai", "Thứ hai", etc.
+     */
+    public static String getDateLabel(String isoDateTime) {
+        try {
+            Date date = parseISODate(isoDateTime);
+            Calendar bookingCal = Calendar.getInstance();
+            bookingCal.setTime(date);
+
+            Calendar today = Calendar.getInstance();
+            Calendar tomorrow = Calendar.getInstance();
+            tomorrow.add(Calendar.DAY_OF_YEAR, 1);
+
+            // Check if today
+            if (isSameDay(bookingCal, today)) {
+                return "Hôm nay";
+            }
+
+            // Check if tomorrow
+            if (isSameDay(bookingCal, tomorrow)) {
+                return "Ngày mai";
+            }
+
+            // Check within 7 days
+            Calendar weekLater = Calendar.getInstance();
+            weekLater.add(Calendar.DAY_OF_YEAR, 7);
+
+            if (bookingCal.before(weekLater)) {
+                // Return day of week
+                SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE", new Locale("vi", "VN"));
+                return dayFormat.format(date);
+            }
+
+            // Return full date
+            return DISPLAY_DATE_FORMAT.format(date);
+
+        } catch (ParseException e) {
+            android.util.Log.e("DateTimeUtils", "Failed to get date label", e);
+            return "";
+        }
+    }
+
+    /**
+     * Check if two calendars are on the same day
+     */
+    private static boolean isSameDay(Calendar cal1, Calendar cal2) {
+        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+               cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
+    }
+}

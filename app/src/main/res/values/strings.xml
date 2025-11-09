@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">Partner_FTask</string>
+
+    <!-- Notification -->
+    <string name="notification_icon">Notification Icon</string>
+    <string name="time_icon">Time Icon</string>
+    <string name="duration_icon">Duration Icon</string>
+    <string name="location_icon">Location Icon</string>
+    <string name="customer_icon">Customer Icon</string>
+    <string name="partners_icon">Partners Icon</string>
+    <string name="note_icon">Note Icon</string>
+    <string name="empty_icon">Empty Icon</string>
+
+    <!-- QR Scanner -->
+    <string name="qr_icon">QR Icon</string>
+    <string name="flashlight_toggle">Toggle Flashlight</string>
+    <string name="scan_qr">Scan QR Code</string>
 </resources>
