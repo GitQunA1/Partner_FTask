@@ -5,6 +5,7 @@ import com.example.partner_ftask.data.model.AuthResponse;
 import com.example.partner_ftask.data.model.Booking;
 import com.example.partner_ftask.data.model.PageResponse;
 import com.example.partner_ftask.data.model.Review;
+import com.example.partner_ftask.data.model.TopUpResponse;
 import com.example.partner_ftask.data.model.Transaction;
 import com.example.partner_ftask.data.model.VerifyOtpRequest;
 import com.example.partner_ftask.data.model.Wallet;
@@ -30,7 +31,18 @@ public interface ApiService {
 
     // Get wallet information
     @GET("users/wallet")
-    Call<ApiResponse<Wallet>> getWallet();
+    Call<ApiResponse<Wallet>> getUserWallet();
+
+    // Top-up wallet
+    @POST("wallets/top-up")
+    Call<ApiResponse<TopUpResponse>> topUpWallet(
+            @Query("amount") double amount,
+            @Query("returnUrl") String returnUrl
+    );
+
+    // Withdrawal from wallet
+    @POST("wallets/withdrawal")
+    Call<ApiResponse<Wallet>> withdrawalWallet(@Query("amount") double amount);
 
     // Get user transactions with pagination
     @GET("users/transactions")

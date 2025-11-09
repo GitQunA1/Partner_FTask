@@ -1,13 +1,14 @@
 package com.example.partner_ftask.ui.adapter;
 
-import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.partner_ftask.R;
@@ -55,7 +56,7 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapte
 
     static class TransactionViewHolder extends RecyclerView.ViewHolder {
         private final FrameLayout iconContainer;
-        private final TextView tvIcon;
+        private final ImageView ivIcon;
         private final TextView tvDescription;
         private final TextView tvDate;
         private final TextView tvStatus;
@@ -63,8 +64,9 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapte
 
         public TransactionViewHolder(@NonNull View itemView) {
             super(itemView);
+            // Find views with fallback to alternative IDs
             iconContainer = itemView.findViewById(R.id.icon_container);
-            tvIcon = itemView.findViewById(R.id.tv_icon);
+            ivIcon = itemView.findViewById(R.id.iv_icon);
             tvDescription = itemView.findViewById(R.id.tv_description);
             tvDate = itemView.findViewById(R.id.tv_date);
             tvStatus = itemView.findViewById(R.id.tv_status);
@@ -73,78 +75,90 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapte
 
         public void bind(Transaction transaction) {
             // Description
-            tvDescription.setText(transaction.getDescription());
+            if (tvDescription != null) {
+                tvDescription.setText(transaction.getDescription());
+            }
 
             // Date
-            tvDate.setText(DateTimeUtils.formatDateTime(transaction.getCreatedAt()));
+            if (tvDate != null) {
+                tvDate.setText(DateTimeUtils.formatDateTime(transaction.getCreatedAt()));
+            }
 
             // Type & Amount
             String type = transaction.getType();
             double amount = transaction.getAmount();
 
             int iconColor;
-            String icon;
+            int iconRes;
             String amountText;
             int amountColor;
 
-            if ("EARNING".equals(type)) {
-                iconColor = itemView.getContext().getColor(R.color.earning_green);
-                icon = "↓";
+            if ("EARNING".equalsIgnoreCase(type) || "TOP_UP".equalsIgnoreCase(type)) {
+                iconColor = ContextCompat.getColor(itemView.getContext(), R.color.earning_green);
+                iconRes = R.drawable.ic_earning;
                 amountText = "+" + DateTimeUtils.formatCurrency(amount);
-                amountColor = itemView.getContext().getColor(R.color.earning_green);
-            } else if ("WITHDRAWAL".equals(type)) {
-                iconColor = itemView.getContext().getColor(R.color.withdrawal_red);
-                icon = "↑";
+                amountColor = ContextCompat.getColor(itemView.getContext(), R.color.earning_green);
+            } else if ("WITHDRAWAL".equalsIgnoreCase(type)) {
+                iconColor = ContextCompat.getColor(itemView.getContext(), R.color.withdrawal_red);
+                iconRes = R.drawable.ic_withdrawal;
                 amountText = "-" + DateTimeUtils.formatCurrency(amount);
-                amountColor = itemView.getContext().getColor(R.color.withdrawal_red);
+                amountColor = ContextCompat.getColor(itemView.getContext(), R.color.withdrawal_red);
             } else {
-                iconColor = itemView.getContext().getColor(R.color.text_secondary);
-                icon = "•";
+                iconColor = ContextCompat.getColor(itemView.getContext(), R.color.text_secondary);
+                iconRes = R.drawable.ic_wallet;
                 amountText = DateTimeUtils.formatCurrency(amount);
-                amountColor = itemView.getContext().getColor(R.color.text_secondary);
+                amountColor = ContextCompat.getColor(itemView.getContext(), R.color.text_secondary);
             }
 
             // Set icon
-            tvIcon.setText(icon);
+            if (ivIcon != null) {
+                ivIcon.setImageResource(iconRes);
+            }
 
             // Set icon background color
-            GradientDrawable drawable = (GradientDrawable) iconContainer.getBackground();
-            if (drawable != null) {
-                drawable.setColor(iconColor);
+            if (iconContainer != null) {
+                iconContainer.setBackgroundColor(iconColor);
             }
 
             // Set amount
-            tvAmount.setText(amountText);
-            tvAmount.setTextColor(amountColor);
+            if (tvAmount != null) {
+                tvAmount.setText(amountText);
+                tvAmount.setTextColor(amountColor);
+            }
 
             // Status
             String status = transaction.getStatus();
             int statusColor;
             String statusText;
 
-            switch (status) {
+            if (status == null) {
+                status = "COMPLETED";
+            }
+
+            switch (status.toUpperCase()) {
                 case "COMPLETED":
-                    statusColor = itemView.getContext().getColor(R.color.success);
+                    statusColor = ContextCompat.getColor(itemView.getContext(), R.color.success);
                     statusText = "Hoàn thành";
                     break;
                 case "PENDING":
-                    statusColor = itemView.getContext().getColor(R.color.pending_orange);
+                    statusColor = ContextCompat.getColor(itemView.getContext(), R.color.pending_orange);
                     statusText = "Đang xử lý";
                     break;
                 case "FAILED":
-                    statusColor = itemView.getContext().getColor(R.color.error);
+                    statusColor = ContextCompat.getColor(itemView.getContext(), R.color.error);
                     statusText = "Thất bại";
                     break;
                 default:
-                    statusColor = itemView.getContext().getColor(R.color.text_secondary);
+                    statusColor = ContextCompat.getColor(itemView.getContext(), R.color.text_secondary);
                     statusText = status;
                     break;
             }
 
-            tvStatus.setText(statusText);
-            GradientDrawable statusDrawable = (GradientDrawable) tvStatus.getBackground();
-            if (statusDrawable != null) {
-                statusDrawable.setColor(statusColor);
+            if (tvStatus != null) {
+                tvStatus.setText(statusText);
+                tvStatus.setBackgroundColor(statusColor);
+                // Only show if not COMPLETED
+                tvStatus.setVisibility("COMPLETED".equalsIgnoreCase(status) ? View.GONE : View.VISIBLE);
             }
         }
     }

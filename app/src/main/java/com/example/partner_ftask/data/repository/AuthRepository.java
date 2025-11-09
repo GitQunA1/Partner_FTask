@@ -73,7 +73,7 @@ public class AuthRepository {
     public void getWallet(WalletCallback callback) {
         Log.d(TAG, "Fetching wallet information...");
 
-        apiService.getWallet().enqueue(new Callback<ApiResponse<Wallet>>() {
+        apiService.getUserWallet().enqueue(new Callback<ApiResponse<Wallet>>() {
             @Override
             public void onResponse(Call<ApiResponse<Wallet>> call, Response<ApiResponse<Wallet>> response) {
                 if (response.isSuccessful() && response.body() != null) {
