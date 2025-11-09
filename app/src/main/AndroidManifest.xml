@@ -20,16 +20,15 @@
         android:theme="@style/Theme.Partner_FTask"
         android:usesCleartextTraffic="true">
 
-        <!-- OTP Login Activity (Main - New with API integration) -->
         <activity
-            android:name=".ui.activity.OtpLoginActivity"
+            android:name=".ui.activity.PhoneLoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
 
 
         <activity

@@ -123,12 +123,14 @@ public class WalletActivity extends AppCompatActivity {
         if (data != null && "partnerftask".equals(data.getScheme())) {
             String responseCode = data.getQueryParameter("vnp_ResponseCode");
             String transactionStatus = data.getQueryParameter("vnp_TransactionStatus");
-            String orderInfo = data.getQueryParameter("vnp_OrderInfo");
+            String txnRef = data.getQueryParameter("vnp_TxnRef");
 
             if ("00".equals(responseCode) && "00".equals(transactionStatus)) {
-                // Payment successful - Need to confirm with backend
-                progressBar.setVisibility(View.VISIBLE);
-                confirmPaymentWithBackend(orderInfo, responseCode, transactionStatus);
+                // Payment successful
+                Toast.makeText(this, "Nạp tiền thành công!", Toast.LENGTH_LONG).show();
+                // Reload wallet info
+                loadWalletInfo();
+                loadTransactions(true);
             } else {
                 // Payment failed
                 String message = getPaymentErrorMessage(responseCode);

@@ -105,13 +105,19 @@
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
-                        <Button
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btn_refresh_wallet"
-                            style="@style/Widget.AppCompat.Button.Borderless"
+                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="🔄 Làm mới"
-                            android:textSize="12sp" />
+                            android:contentDescription="Làm mới"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            app:icon="@android:drawable/ic_menu_rotate"
+                            app:iconTint="@color/primary"
+                            app:iconSize="20dp" />
 
                     </LinearLayout>
 
@@ -228,6 +234,17 @@
                 android:text="⭐ Xem đánh giá của tôi"
                 android:textColor="@color/white"
                 app:backgroundTint="@color/accent"
+                app:cornerRadius="8dp" />
+
+            <!-- District Settings Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_district_settings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="📍 Đăng ký quận làm việc"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/info"
                 app:cornerRadius="8dp" />
 
             <!-- Logout Button -->
