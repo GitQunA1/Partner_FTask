@@ -3,10 +3,14 @@ package com.example.partner_ftask.data.api;
 import com.example.partner_ftask.data.model.ApiResponse;
 import com.example.partner_ftask.data.model.AuthResponse;
 import com.example.partner_ftask.data.model.Booking;
+import com.example.partner_ftask.data.model.District;
 import com.example.partner_ftask.data.model.PageResponse;
 import com.example.partner_ftask.data.model.Review;
 import com.example.partner_ftask.data.model.TopUpResponse;
 import com.example.partner_ftask.data.model.Transaction;
+import com.example.partner_ftask.data.model.UpdateDistrictsRequest;
+import com.example.partner_ftask.data.model.UpdateUserInfoRequest;
+import com.example.partner_ftask.data.model.UserInfoResponse;
 import com.example.partner_ftask.data.model.VerifyOtpRequest;
 import com.example.partner_ftask.data.model.Wallet;
 
@@ -16,6 +20,7 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -26,6 +31,28 @@ public interface ApiService {
     // Verify OTP and login/register
     @POST("auth/verify-otp")
     Call<ApiResponse<AuthResponse>> verifyOtp(@Body VerifyOtpRequest request);
+
+    // Get current user info
+    @GET("users/me")
+    Call<ApiResponse<UserInfoResponse>> getUserInfo();
+
+    // Update user info
+    @PUT("users/update-info")
+    Call<ApiResponse<UserInfoResponse>> updateUserInfo(@Body UpdateUserInfoRequest request);
+
+    // ==================== PARTNERS ====================
+
+    // Get partner registered districts
+    @GET("partners/districts")
+    Call<ApiResponse<List<District>>> getPartnerDistricts();
+
+    // Get all available districts
+    @GET("districts")
+    Call<ApiResponse<List<District>>> getAllDistricts();
+
+    // Update partner districts
+    @PUT("partners/districts")
+    Call<ApiResponse<Void>> updatePartnerDistricts(@Body UpdateDistrictsRequest request);
 
     // ==================== WALLET ====================
 

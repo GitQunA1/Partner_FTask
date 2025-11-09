@@ -14,9 +14,18 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.partner_ftask.MainActivity;
 import com.example.partner_ftask.R;
+import com.example.partner_ftask.data.api.ApiClient;
+import com.example.partner_ftask.data.api.ApiService;
+import com.example.partner_ftask.data.model.ApiResponse;
 import com.example.partner_ftask.data.model.AuthResponse;
+import com.example.partner_ftask.data.model.UserInfoResponse;
 import com.example.partner_ftask.data.repository.AuthRepository;
 import com.example.partner_ftask.utils.PreferenceManager;
+
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class OtpVerificationActivity extends AppCompatActivity {
 
@@ -27,6 +36,7 @@ public class OtpVerificationActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private PreferenceManager preferenceManager;
     private AuthRepository authRepository;
+    private ApiService apiService;
     private String phoneNumber;
 
     @Override
@@ -43,6 +53,8 @@ public class OtpVerificationActivity extends AppCompatActivity {
 
         preferenceManager = new PreferenceManager(this);
         authRepository = new AuthRepository(this);
+        ApiClient.init(this);
+        apiService = ApiClient.getApiService();
 
         tvPhoneNumber = findViewById(R.id.tv_phone_number);
         etOtp = findViewById(R.id.et_otp);
@@ -129,8 +141,30 @@ public class OtpVerificationActivity extends AppCompatActivity {
             : "Đăng nhập thành công!";
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
 
-        goToMainActivity();
+        fetchUserInfo();
     }
+
+    private void fetchUserInfo() {
+        apiService.getUserInfo().enqueue(new Callback<ApiResponse<UserInfoResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<UserInfoResponse>> call, Response<ApiResponse<UserInfoResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse<UserInfoResponse> apiResponse = response.body();
+                    if (apiResponse.getCode() == 200 && apiResponse.getResult() != null) {
+                        UserInfoResponse userInfo = apiResponse.getResult();
+                        preferenceManager.saveUserInfo(userInfo);
+                    }
+                }
+                goToMainActivity();
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<UserInfoResponse>> call, Throwable t) {
+                goToMainActivity();
+            }
+        });
+    }
+
 
     private void setLoading(boolean isLoading) {
         progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);

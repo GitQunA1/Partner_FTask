@@ -27,7 +27,10 @@ import com.example.partner_ftask.data.model.PageResponse;
 import com.example.partner_ftask.ui.activity.BookingDetailActivity;
 import com.example.partner_ftask.ui.adapter.MyJobsAdapter;
 import com.google.android.material.tabs.TabLayout;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -352,31 +355,8 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                         }
                     }
                 } else {
-                    // Get error body
-                    String errorBody = "No error body";
-                    try {
-                        if (response.errorBody() != null) {
-                            errorBody = response.errorBody().string();
-                            android.util.Log.e("MyJobsFragment", "Error Body: " + errorBody);
-                        }
-                    } catch (Exception e) {
-                        android.util.Log.e("MyJobsFragment", "Failed to read error body", e);
-                    }
-
-                    android.util.Log.e("MyJobsFragment", "❌ START FAILED - HTTP " + response.code());
-
-                    String errorMessage = "Lỗi khi bắt đầu (Code: " + response.code() + ")";
-                    if (response.code() == 401) {
-                        errorMessage = "Chưa đăng nhập hoặc token hết hạn!";
-                    } else if (response.code() == 403) {
-                        errorMessage = "Bạn không có quyền bắt đầu việc này!";
-                    } else if (response.code() == 404) {
-                        errorMessage = "Không tìm thấy booking!";
-                    } else if (response.code() == 400) {
-                        errorMessage = "Trạng thái không hợp lệ để bắt đầu! (Phải JOINED trước)";
-                    }
-
                     if (getContext() != null) {
+                        String errorMessage = parseErrorMessage(response, "Lỗi khi bắt đầu");
                         Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
                     }
                 }
@@ -460,31 +440,8 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                         }
                     }
                 } else {
-                    // Get error body
-                    String errorBody = "No error body";
-                    try {
-                        if (response.errorBody() != null) {
-                            errorBody = response.errorBody().string();
-                            android.util.Log.e("MyJobsFragment", "Error Body: " + errorBody);
-                        }
-                    } catch (Exception e) {
-                        android.util.Log.e("MyJobsFragment", "Failed to read error body", e);
-                    }
-
-                    android.util.Log.e("MyJobsFragment", "❌ COMPLETE FAILED - HTTP " + response.code());
-
-                    String errorMessage = "Lỗi khi hoàn thành (Code: " + response.code() + ")";
-                    if (response.code() == 401) {
-                        errorMessage = "Chưa đăng nhập hoặc token hết hạn!";
-                    } else if (response.code() == 403) {
-                        errorMessage = "Bạn không có quyền hoàn thành việc này!";
-                    } else if (response.code() == 404) {
-                        errorMessage = "Không tìm thấy booking!";
-                    } else if (response.code() == 400) {
-                        errorMessage = "Trạng thái không hợp lệ! (Phải WORKING trước)";
-                    }
-
                     if (getContext() != null) {
+                        String errorMessage = parseErrorMessage(response, "Lỗi khi hoàn thành");
                         Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
                     }
                 }
@@ -569,31 +526,8 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                         }
                     }
                 } else {
-                    // Get error body
-                    String errorBody = "No error body";
-                    try {
-                        if (response.errorBody() != null) {
-                            errorBody = response.errorBody().string();
-                            android.util.Log.e("MyJobsFragment", "Error Body: " + errorBody);
-                        }
-                    } catch (Exception e) {
-                        android.util.Log.e("MyJobsFragment", "Failed to read error body", e);
-                    }
-
-                    android.util.Log.e("MyJobsFragment", "❌ CANCEL FAILED - HTTP " + response.code());
-
-                    String errorMessage = "Lỗi khi hủy (Code: " + response.code() + ")";
-                    if (response.code() == 401) {
-                        errorMessage = "Chưa đăng nhập hoặc token hết hạn!";
-                    } else if (response.code() == 403) {
-                        errorMessage = "Bạn không có quyền hủy việc này!";
-                    } else if (response.code() == 404) {
-                        errorMessage = "Không tìm thấy booking!";
-                    } else if (response.code() == 400) {
-                        errorMessage = "Không thể hủy ở trạng thái hiện tại!";
-                    }
-
                     if (getContext() != null) {
+                        String errorMessage = parseErrorMessage(response, "Lỗi khi hủy");
                         Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
                     }
                 }
@@ -626,6 +560,44 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
                 }
             }
         });
+    }
+
+    private String parseErrorMessage(Response<?> response, String defaultMessage) {
+        String errorMessage = defaultMessage + " (Code: " + response.code() + ")";
+        
+        try {
+            if (response.errorBody() != null) {
+                String errorBody = response.errorBody().string();
+                android.util.Log.e("MyJobsFragment", "Error Body: " + errorBody);
+                
+                Gson gson = new Gson();
+                ApiResponse<?> errorResponse = gson.fromJson(errorBody, ApiResponse.class);
+                
+                if (errorResponse != null && errorResponse.getMessage() != null && !errorResponse.getMessage().isEmpty()) {
+                    errorMessage = errorResponse.getMessage();
+                }
+            }
+        } catch (IOException | JsonSyntaxException e) {
+            android.util.Log.e("MyJobsFragment", "Failed to parse error body", e);
+        }
+        
+        if (errorMessage.equals(defaultMessage + " (Code: " + response.code() + ")")) {
+            if (response.code() == 401) {
+                errorMessage = "Chưa đăng nhập hoặc token hết hạn!";
+            } else if (response.code() == 403) {
+                errorMessage = "Bạn không có quyền thực hiện thao tác này!";
+            } else if (response.code() == 404) {
+                errorMessage = "Không tìm thấy dữ liệu!";
+            } else if (response.code() == 400) {
+                errorMessage = "Yêu cầu không hợp lệ!";
+            } else if (response.code() == 409) {
+                errorMessage = "Dữ liệu đã được cập nhật hoặc không còn khả dụng!";
+            } else if (response.code() == 500) {
+                errorMessage = "Lỗi server! Vui lòng thử lại sau.";
+            }
+        }
+        
+        return errorMessage;
     }
 
     @Override
