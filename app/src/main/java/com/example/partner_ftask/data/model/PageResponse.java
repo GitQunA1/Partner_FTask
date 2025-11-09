@@ -1,10 +1,14 @@
 package com.example.partner_ftask.data.model;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.List;
 
 public class PageResponse<T> {
     private List<T> content;
+    @SerializedName("number")
     private int pageNumber;
+    @SerializedName("size")
     private int pageSize;
     private long totalElements;
     private int totalPages;
@@ -67,4 +71,3 @@ public class PageResponse<T> {
         this.first = first;
     }
 }
-

@@ -1,10 +1,13 @@
 package com.example.partner_ftask.ui.fragment;
 
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -24,12 +27,18 @@ import com.example.partner_ftask.data.model.Booking;
 import com.example.partner_ftask.data.model.PageResponse;
 import com.example.partner_ftask.ui.activity.BookingDetailActivity;
 import com.example.partner_ftask.ui.adapter.BookingAdapter;
+import com.example.partner_ftask.utils.PreferenceManager;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -43,6 +52,17 @@ public class JobsFragment extends Fragment implements BookingAdapter.OnBookingCl
     private ProgressBar progressBar;
     private TextView tvEmpty;
     private ApiService apiService;
+    private Button btnPrevious, btnNext, btnFromDate, btnToDate;
+    private TextView tvPageInfo;
+
+    // Use 1-based indexing for currentPage to align with the backend API
+    private int currentPage = 1;
+    private int totalPages = 1;
+    private final int PAGE_SIZE = 5;
+
+    private String fromDate, toDate;
+    private final Calendar fromCalendar = Calendar.getInstance();
+    private final Calendar toCalendar = Calendar.getInstance();
 
     @Nullable
     @Override
@@ -59,6 +79,11 @@ public class JobsFragment extends Fragment implements BookingAdapter.OnBookingCl
         swipeRefresh = view.findViewById(R.id.swipe_refresh);
         progressBar = view.findViewById(R.id.progress_bar);
         tvEmpty = view.findViewById(R.id.tv_empty);
+        btnPrevious = view.findViewById(R.id.btn_previous);
+        btnNext = view.findViewById(R.id.btn_next);
+        tvPageInfo = view.findViewById(R.id.tv_page_info);
+        btnFromDate = view.findViewById(R.id.btn_from_date);
+        btnToDate = view.findViewById(R.id.btn_to_date);
 
         // Setup RecyclerView
         adapter = new BookingAdapter(this);
@@ -69,28 +94,75 @@ public class JobsFragment extends Fragment implements BookingAdapter.OnBookingCl
         apiService = ApiClient.getApiService();
 
         // Setup swipe refresh
-        swipeRefresh.setOnRefreshListener(() -> loadAvailableJobs());
+        swipeRefresh.setOnRefreshListener(() -> {
+            currentPage = 1; // Reset to first page
+            loadAvailableJobs();
+        });
+
+        btnPrevious.setOnClickListener(v -> {
+            if (currentPage > 1) {
+                currentPage--;
+                loadAvailableJobs();
+            }
+        });
+
+        btnNext.setOnClickListener(v -> {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadAvailableJobs();
+            }
+        });
+
+        btnFromDate.setOnClickListener(v -> showDatePickerDialog(true));
+        btnToDate.setOnClickListener(v -> showDatePickerDialog(false));
 
         // Check token before loading
         checkTokenAndLoadData();
     }
 
-    private void checkTokenAndLoadData() {
-        com.example.partner_ftask.utils.PreferenceManager prefManager =
-            new com.example.partner_ftask.utils.PreferenceManager(requireContext());
-        String token = prefManager.getAccessToken();
+    private void showDatePickerDialog(boolean isFromDate) {
+        Calendar calendar = isFromDate ? fromCalendar : toCalendar;
+        DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(), (view, year, month, dayOfMonth) -> {
+            calendar.set(Calendar.YEAR, year);
+            calendar.set(Calendar.MONTH, month);
+            calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+            updateDate(isFromDate, calendar);
+            currentPage = 1; // Reset to first page when date changes
+            loadAvailableJobs();
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+        datePickerDialog.show();
+    }
 
-        android.util.Log.d("JobsFragment", "Token exists: " + (token != null && !token.isEmpty()));
-        android.util.Log.d("JobsFragment", "Token length: " + (token != null ? token.length() : 0));
+    private void updateDate(boolean isFromDate, Calendar calendar) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        
+        if (isFromDate) {
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+            fromDate = sdf.format(calendar.getTime());
+            btnFromDate.setText(new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(calendar.getTime()));
+        } else {
+            calendar.set(Calendar.HOUR_OF_DAY, 23);
+            calendar.set(Calendar.MINUTE, 59);
+            calendar.set(Calendar.SECOND, 59);
+            calendar.set(Calendar.MILLISECOND, 999);
+            toDate = sdf.format(calendar.getTime());
+            btnToDate.setText(new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(calendar.getTime()));
+        }
+    }
+
+    private void checkTokenAndLoadData() {
+        PreferenceManager prefManager = new PreferenceManager(requireContext());
+        String token = prefManager.getAccessToken();
 
         if (token == null || token.isEmpty()) {
             tvEmpty.setVisibility(View.VISIBLE);
             tvEmpty.setText("Vui lòng đăng nhập để xem công việc");
-            Toast.makeText(requireContext(),
-                "Bạn chưa đăng nhập! Vui lòng vào tab Cá nhân để đăng nhập.",
-                Toast.LENGTH_LONG).show();
+            Toast.makeText(requireContext(), "Bạn chưa đăng nhập! Vui lòng vào tab Cá nhân để đăng nhập.", Toast.LENGTH_LONG).show();
         } else {
-            // Load data
             loadAvailableJobs();
         }
     }
@@ -99,48 +171,39 @@ public class JobsFragment extends Fragment implements BookingAdapter.OnBookingCl
         showLoading(true);
         tvEmpty.setVisibility(View.GONE);
 
-        // Load ALL bookings, then filter for PENDING and PARTIALLY_ACCEPTED on client side
-        // Note: API uses 1-based pagination, not 0-based
-        // We pass null for status to get all bookings, then filter below
-        apiService.getBookings(null, 1, 50, null, null, null, null, null)
+        List<String> statuses = Arrays.asList("PARTIALLY_ACCEPTED", "PENDING");
+
+        Log.d("JobsFragment", "Loading jobs. Page: " + currentPage + ", From: " + fromDate + ", To: " + toDate);
+
+        apiService.getBookings(statuses, currentPage, PAGE_SIZE, fromDate, toDate, null, null, null)
                 .enqueue(new Callback<ApiResponse<PageResponse<Booking>>>() {
                     @Override
-                    public void onResponse(Call<ApiResponse<PageResponse<Booking>>> call, Response<ApiResponse<PageResponse<Booking>>> response) {
+                    public void onResponse(@NonNull Call<ApiResponse<PageResponse<Booking>>> call, @NonNull Response<ApiResponse<PageResponse<Booking>>> response) {
                         showLoading(false);
                         swipeRefresh.setRefreshing(false);
 
-                        // Log response for debugging
-                        android.util.Log.d("JobsFragment", "Response Code: " + response.code());
-                        android.util.Log.d("JobsFragment", "Response Success: " + response.isSuccessful());
-
                         if (response.isSuccessful() && response.body() != null) {
                             ApiResponse<PageResponse<Booking>> apiResponse = response.body();
-                            android.util.Log.d("JobsFragment", "API Code: " + apiResponse.getCode());
-                            android.util.Log.d("JobsFragment", "API Message: " + apiResponse.getMessage());
-
                             if (apiResponse.getCode() == 200 && apiResponse.getResult() != null) {
-                                List<Booking> allBookings = apiResponse.getResult().getContent();
-                                android.util.Log.d("JobsFragment", "Total bookings from API: " + (allBookings != null ? allBookings.size() : 0));
+                                PageResponse<Booking> pageResponse = apiResponse.getResult();
+                                totalPages = pageResponse.getTotalPages();
+//                                currentPage = pageResponse.getPageNumber();
 
-                                // Filter: Chỉ hiển thị bookings có status PENDING hoặc PARTIALLY_ACCEPTED
-                                List<Booking> availableBookings = filterAvailableBookings(allBookings);
-                                android.util.Log.d("JobsFragment", "Available bookings (PENDING/PARTIALLY_ACCEPTED): " + availableBookings.size());
+                                updatePaginationControls();
 
+                                List<Booking> availableBookings = pageResponse.getContent();
                                 if (availableBookings != null && !availableBookings.isEmpty()) {
-                                    // Có data → Hiện RecyclerView, ẩn empty text
                                     recyclerView.setVisibility(View.VISIBLE);
                                     tvEmpty.setVisibility(View.GONE);
                                     adapter.setBookings(availableBookings);
                                 } else {
-                                    // Không có data → Ẩn RecyclerView, hiện empty text
                                     recyclerView.setVisibility(View.GONE);
                                     tvEmpty.setVisibility(View.VISIBLE);
-                                    adapter.setBookings(new ArrayList<>());  // Clear adapter
-                                    Toast.makeText(requireContext(), "Không có công việc khả dụng", Toast.LENGTH_SHORT).show();
+                                    adapter.setBookings(new ArrayList<>()); // Clear adapter
+                                    tvEmpty.setText("Không có công việc khả dụng");
                                 }
                             } else {
-                                String errorMsg = apiResponse.getMessage() != null ? apiResponse.getMessage() : "Lỗi không xác định";
-                                Toast.makeText(requireContext(), "Lỗi: " + errorMsg, Toast.LENGTH_LONG).show();
+                                Toast.makeText(requireContext(), "Lỗi: " + apiResponse.getMessage(), Toast.LENGTH_LONG).show();
                             }
                         } else {
                             String errorMessage = parseErrorMessage(response, "Lỗi khi tải dữ liệu");
@@ -149,56 +212,19 @@ public class JobsFragment extends Fragment implements BookingAdapter.OnBookingCl
                     }
 
                     @Override
-                    public void onFailure(Call<ApiResponse<PageResponse<Booking>>> call, Throwable t) {
+                    public void onFailure(@NonNull Call<ApiResponse<PageResponse<Booking>>> call, @NonNull Throwable t) {
                         showLoading(false);
                         swipeRefresh.setRefreshing(false);
-
-                        // Log error details
-                        android.util.Log.e("JobsFragment", "API Call Failed", t);
-
-                        String errorMessage = "Lỗi kết nối: ";
-                        if (t instanceof java.net.UnknownHostException) {
-                            errorMessage += "Không thể kết nối đến server. Kiểm tra internet!";
-                        } else if (t instanceof java.net.SocketTimeoutException) {
-                            errorMessage += "Timeout! Server không phản hồi.";
-                        } else {
-                            errorMessage += t.getMessage();
-                        }
-
-                        Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+                        Log.e("JobsFragment", "API Call Failed", t);
+                        Toast.makeText(requireContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
-    /**
-     * Filter bookings để chỉ hiển thị những booking còn available (PENDING hoặc PARTIALLY_ACCEPTED)
-     * PENDING: Chưa có partner nào nhận
-     * PARTIALLY_ACCEPTED: Đã có partner nhận nhưng chưa đủ số lượng yêu cầu
-     */
-    private List<Booking> filterAvailableBookings(List<Booking> bookings) {
-        List<Booking> filtered = new ArrayList<>();
-
-        if (bookings == null) {
-            return filtered;
-        }
-
-        for (Booking booking : bookings) {
-            String status = booking.getStatus();
-
-            // Chỉ thêm vào list nếu status là PENDING hoặc PARTIALLY_ACCEPTED
-            if ("PENDING".equals(status) || "PARTIALLY_ACCEPTED".equals(status)) {
-                filtered.add(booking);
-                android.util.Log.d("JobsFragment", "✅ Booking #" + booking.getId() +
-                    " - Status: " + status +
-                    " - Service: " + (booking.getVariant() != null ? booking.getVariant().getName() : "N/A") +
-                    " - Added to available list");
-            } else {
-                android.util.Log.d("JobsFragment", "❌ Booking #" + booking.getId() +
-                    " - Status: " + status + " - Skipped (not available)");
-            }
-        }
-
-        return filtered;
+    private void updatePaginationControls() {
+        tvPageInfo.setText(String.format(Locale.getDefault(), "Trang %d / %d", currentPage, totalPages));
+        btnPrevious.setEnabled(currentPage > 1);
+        btnNext.setEnabled(currentPage < totalPages);
     }
 
     private void showLoading(boolean show) {
@@ -207,7 +233,6 @@ public class JobsFragment extends Fragment implements BookingAdapter.OnBookingCl
 
     @Override
     public void onBookingClick(Booking booking) {
-        // Open detail activity
         Intent intent = new Intent(requireContext(), BookingDetailActivity.class);
         intent.putExtra("booking_id", booking.getId());
         startActivity(intent);
@@ -215,128 +240,56 @@ public class JobsFragment extends Fragment implements BookingAdapter.OnBookingCl
 
     @Override
     public void onActionClick(Booking booking) {
-        // Claim the booking
         claimBooking(booking.getId());
     }
 
     private void claimBooking(int bookingId) {
         showLoading(true);
-
-        // Log request details
-        android.util.Log.d("JobsFragment", "========== CLAIM BOOKING REQUEST ==========");
-        android.util.Log.d("JobsFragment", "Booking ID: " + bookingId);
-        android.util.Log.d("JobsFragment", "Endpoint: POST /partners/bookings/" + bookingId + "/claim");
-
-        // Check token
-        com.example.partner_ftask.utils.PreferenceManager prefManager =
-            new com.example.partner_ftask.utils.PreferenceManager(requireContext());
-        String token = prefManager.getAccessToken();
-        android.util.Log.d("JobsFragment", "Token exists: " + (token != null && !token.isEmpty()));
-        if (token != null && token.length() > 20) {
-            android.util.Log.d("JobsFragment", "Token preview: " + token.substring(0, 20) + "...");
-        }
-
         apiService.claimBooking(bookingId).enqueue(new Callback<ApiResponse<Booking>>() {
             @Override
-            public void onResponse(Call<ApiResponse<Booking>> call, Response<ApiResponse<Booking>> response) {
+            public void onResponse(@NonNull Call<ApiResponse<Booking>> call, @NonNull Response<ApiResponse<Booking>> response) {
                 showLoading(false);
-
-                // Log response details
-                android.util.Log.d("JobsFragment", "========== CLAIM BOOKING RESPONSE ==========");
-                android.util.Log.d("JobsFragment", "HTTP Status Code: " + response.code());
-                android.util.Log.d("JobsFragment", "Response Success: " + response.isSuccessful());
-
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<Booking> apiResponse = response.body();
-                    android.util.Log.d("JobsFragment", "API Code: " + apiResponse.getCode());
-                    android.util.Log.d("JobsFragment", "API Message: " + apiResponse.getMessage());
-
-                    if (apiResponse.getResult() != null) {
-                        Booking booking = apiResponse.getResult();
-                        android.util.Log.d("JobsFragment", "Booking Status: " + booking.getStatus());
-                        android.util.Log.d("JobsFragment", "Partners Count: " + (booking.getPartners() != null ? booking.getPartners().size() : 0));
-                    }
-
                     if (apiResponse.getCode() == 200) {
-                        android.util.Log.d("JobsFragment", "✅ CLAIM SUCCESS!");
                         Toast.makeText(requireContext(), "Nhận việc thành công!", Toast.LENGTH_SHORT).show();
                         loadAvailableJobs(); // Reload list
                     } else {
-                        android.util.Log.e("JobsFragment", "❌ CLAIM FAILED - API Error Code: " + apiResponse.getCode());
                         Toast.makeText(requireContext(), "Lỗi: " + apiResponse.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 } else {
                     String errorMessage = parseErrorMessage(response, "Lỗi khi nhận việc");
                     Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
                 }
-                android.util.Log.d("JobsFragment", "==========================================");
             }
 
             @Override
-            public void onFailure(Call<ApiResponse<Booking>> call, Throwable t) {
+            public void onFailure(@NonNull Call<ApiResponse<Booking>> call, @NonNull Throwable t) {
                 showLoading(false);
-
-                // Log failure details
-                android.util.Log.e("JobsFragment", "========== CLAIM BOOKING FAILED ==========");
-                android.util.Log.e("JobsFragment", "Error Type: " + t.getClass().getSimpleName());
-                android.util.Log.e("JobsFragment", "Error Message: " + t.getMessage());
-                android.util.Log.e("JobsFragment", "❌ Network/Connection Error", t);
-                android.util.Log.e("JobsFragment", "==========================================");
-
-                String errorMessage = "Lỗi kết nối: ";
-                if (t instanceof java.net.UnknownHostException) {
-                    errorMessage += "Không thể kết nối server!";
-                } else if (t instanceof java.net.SocketTimeoutException) {
-                    errorMessage += "Timeout!";
-                } else {
-                    errorMessage += t.getMessage();
-                }
-
-                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+                Log.e("JobsFragment", "Claim Booking Failed", t);
+                Toast.makeText(requireContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
     }
 
     private String parseErrorMessage(Response<?> response, String defaultMessage) {
-        String errorMessage = defaultMessage + " (Code: " + response.code() + ")";
-        
-        try {
-            if (response.errorBody() != null) {
-                String errorBody = response.errorBody().string();
-                android.util.Log.e("JobsFragment", "Error Body: " + errorBody);
-                
-                Gson gson = new Gson();
-                ApiResponse<?> errorResponse = gson.fromJson(errorBody, ApiResponse.class);
-                
-                if (errorResponse != null && errorResponse.getMessage() != null && !errorResponse.getMessage().isEmpty()) {
-                    errorMessage = errorResponse.getMessage();
+        if (response.errorBody() != null) {
+            try {
+                String errorBodyString = response.errorBody().string();
+                Log.e("JobsFragment", "Raw Error Body: " + errorBodyString);
+                try {
+                    ApiResponse<?> apiResponse = new Gson().fromJson(errorBodyString, ApiResponse.class);
+                    if (apiResponse != null && apiResponse.getMessage() != null && !apiResponse.getMessage().isEmpty()) {
+                        return apiResponse.getMessage();
+                    }
+                } catch (JsonSyntaxException e) {
+                    Log.e("JobsFragment", "Failed to parse error body as JSON", e);
                 }
-            }
-        } catch (IOException | JsonSyntaxException e) {
-            android.util.Log.e("JobsFragment", "Failed to parse error body", e);
-        }
-        
-        if (errorMessage.equals(defaultMessage + " (Code: " + response.code() + ")")) {
-            if (response.code() == 401) {
-                errorMessage = "Chưa đăng nhập hoặc token hết hạn!";
-            } else if (response.code() == 403) {
-                errorMessage = "Bạn không có quyền thực hiện thao tác này!";
-            } else if (response.code() == 404) {
-                errorMessage = "Không tìm thấy dữ liệu!";
-            } else if (response.code() == 409) {
-                errorMessage = "Dữ liệu đã được cập nhật hoặc không còn khả dụng!";
-            } else if (response.code() == 500) {
-                errorMessage = "Lỗi server! Vui lòng thử lại sau.";
+                return errorBodyString;
+            } catch (IOException e) {
+                Log.e("JobsFragment", "Error reading error body", e);
             }
         }
-        
-        return errorMessage;
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        loadAvailableJobs();
+        return defaultMessage + " (Code: " + response.code() + ")";
     }
 }
-

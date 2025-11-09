@@ -89,7 +89,7 @@ public interface ApiService {
     // Get list of available bookings
     @GET("bookings")
     Call<ApiResponse<PageResponse<Booking>>> getBookings(
-            @Query("status") String status,
+            @Query("statuses") List<String> statuses,
             @Query("page") int page,
             @Query("size") int size,
             @Query("fromDate") String fromDate,
@@ -119,4 +119,3 @@ public interface ApiService {
     @POST("partners/bookings/{bookingId}/cancel")
     Call<ApiResponse<Booking>> cancelBooking(@Path("bookingId") int bookingId);
 }
-
