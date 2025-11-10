@@ -99,6 +99,22 @@ public interface ApiService {
             @Query("address") String address
     );
 
+    // NOTE: The path "bookings/available" conflicts with "bookings/{id}".
+    // To fix the 500 error, you need to modify your backend to distinguish between these two paths.
+    // If you are using Spring, you can change the mapping for getBookingDetail to: @GetMapping("/bookings/{id:\\d+}")
+    // This will ensure that only numeric values are matched as an ID.
+    @GET("bookings/available/list")
+    Call<ApiResponse<PageResponse<Booking>>> getAvailableBookings(
+            @Query("statuses") List<String> statuses,
+            @Query("page") int page,
+            @Query("size") int size,
+            @Query("fromDate") String fromDate,
+            @Query("toDate") String toDate,
+            @Query("minPrice") Double minPrice,
+            @Query("maxPrice") Double maxPrice,
+            @Query("address") String address
+    );
+
     // Get booking detail
     @GET("bookings/{id}")
     Call<ApiResponse<Booking>> getBookingDetail(@Path("id") int id);
