@@ -121,22 +121,63 @@ public class WalletActivity extends AppCompatActivity {
 
         Uri data = intent.getData();
         if (data != null && "partnerftask".equals(data.getScheme())) {
-            String responseCode = data.getQueryParameter("vnp_ResponseCode");
-            String transactionStatus = data.getQueryParameter("vnp_TransactionStatus");
-            String txnRef = data.getQueryParameter("vnp_TxnRef");
+            String vnpOrderInfo = data.getQueryParameter("vnp_OrderInfo");
+            String vnpResponseCode = data.getQueryParameter("vnp_ResponseCode");
+            String vnpTransactionStatus = data.getQueryParameter("vnp_TransactionStatus");
 
-            if ("00".equals(responseCode) && "00".equals(transactionStatus)) {
-                // Payment successful
-                Toast.makeText(this, "Nạp tiền thành công!", Toast.LENGTH_LONG).show();
-                // Reload wallet info
-                loadWalletInfo();
-                loadTransactions(true);
-            } else {
-                // Payment failed
-                String message = getPaymentErrorMessage(responseCode);
-                Toast.makeText(this, "Nạp tiền thất bại: " + message, Toast.LENGTH_LONG).show();
-            }
+            // Gọi API confirm để xác nhận giao dịch với backend
+            confirmPaymentWithBackend(vnpOrderInfo, vnpResponseCode, vnpTransactionStatus);
         }
+    }
+
+    private void confirmPaymentWithBackend(String vnpOrderInfo, String vnpResponseCode, String vnpTransactionStatus) {
+        if (vnpOrderInfo == null || vnpResponseCode == null || vnpTransactionStatus == null) {
+            Toast.makeText(this, "Thông tin thanh toán không đầy đủ", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        progressBar.setVisibility(View.VISIBLE);
+
+        apiService.confirmPayment(vnpOrderInfo, vnpResponseCode, vnpTransactionStatus)
+                .enqueue(new Callback<ApiResponse<Void>>() {
+                    @Override
+                    public void onResponse(Call<ApiResponse<Void>> call,
+                                           Response<ApiResponse<Void>> response) {
+                        progressBar.setVisibility(View.GONE);
+
+                        if (response.isSuccessful() && response.body() != null) {
+                            ApiResponse<Void> apiResponse = response.body();
+
+                            if (apiResponse.getCode() == 200) {
+                                // Thanh toán thành công
+                                Toast.makeText(WalletActivity.this,
+                                        "Nạp tiền thành công!", Toast.LENGTH_LONG).show();
+                                // Reload wallet info và transactions
+                                loadWalletInfo();
+                                loadTransactions(true);
+                            } else {
+                                // Xử lý các trường hợp khác (thất bại, pending...)
+                                String message = apiResponse.getMessage();
+                                if (message == null || message.isEmpty()) {
+                                    message = getPaymentErrorMessage(vnpResponseCode);
+                                }
+                                Toast.makeText(WalletActivity.this,
+                                        "Nạp tiền thất bại: " + message, Toast.LENGTH_LONG).show();
+                            }
+                        } else {
+                            Toast.makeText(WalletActivity.this,
+                                    "Không thể xác nhận giao dịch", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ApiResponse<Void>> call, Throwable t) {
+                        progressBar.setVisibility(View.GONE);
+                        Toast.makeText(WalletActivity.this,
+                                "Lỗi kết nối khi xác nhận: " + t.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private String getPaymentErrorMessage(String responseCode) {
@@ -399,10 +440,10 @@ public class WalletActivity extends AppCompatActivity {
     private void processTopUp(double amount) {
         progressBar.setVisibility(View.VISIBLE);
 
-        // Create deep link return URL
-        String returnUrl = "partnerftask://payment/vnpay-return";
+        // Create deep link callback URL cho VNPAY redirect về
+        String callbackUrl = "partnerftask://payment/vnpay-return";
 
-        apiService.topUpWallet(amount, returnUrl).enqueue(new Callback<ApiResponse<TopUpResponse>>() {
+        apiService.topUpWallet(amount, callbackUrl).enqueue(new Callback<ApiResponse<TopUpResponse>>() {
             @Override
             public void onResponse(Call<ApiResponse<TopUpResponse>> call,
                                    Response<ApiResponse<TopUpResponse>> response) {

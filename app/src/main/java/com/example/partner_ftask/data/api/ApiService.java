@@ -64,7 +64,15 @@ public interface ApiService {
     @POST("wallets/top-up")
     Call<ApiResponse<TopUpResponse>> topUpWallet(
             @Query("amount") double amount,
-            @Query("returnUrl") String returnUrl
+            @Query("callbackUrl") String callbackUrl
+    );
+
+    // Confirm payment after VNPAY callback
+    @GET("payments/confirm")
+    Call<ApiResponse<Void>> confirmPayment(
+            @Query("vnp_OrderInfo") String vnpOrderInfo,
+            @Query("vnp_ResponseCode") String vnpResponseCode,
+            @Query("vnp_TransactionStatus") String vnpTransactionStatus
     );
 
     // Withdrawal from wallet
