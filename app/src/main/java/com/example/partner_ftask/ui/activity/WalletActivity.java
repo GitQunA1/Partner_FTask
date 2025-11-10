@@ -229,6 +229,8 @@ public class WalletActivity extends AppCompatActivity {
                 progressBar.setVisibility(View.GONE);
                 currentWallet = wallet;
                 displayWalletInfo(wallet);
+                // Notify other screens (e.g., Profile) to update
+                sendWalletUpdatedBroadcast();
             }
 
             @Override
@@ -483,37 +485,106 @@ public class WalletActivity extends AppCompatActivity {
     private void processWithdrawal(double amount) {
         progressBar.setVisibility(View.VISIBLE);
 
-        apiService.withdrawalWallet(amount).enqueue(new Callback<ApiResponse<Wallet>>() {
+        apiService.withdrawalWallet(amount).enqueue(new retrofit2.Callback<ApiResponse<Wallet>>() {
             @Override
-            public void onResponse(Call<ApiResponse<Wallet>> call,
-                                   Response<ApiResponse<Wallet>> response) {
-                progressBar.setVisibility(View.GONE);
+            public void onResponse(retrofit2.Call<ApiResponse<Wallet>> call,
+                                   retrofit2.Response<ApiResponse<Wallet>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<Wallet> apiResponse = response.body();
-                    if (apiResponse.getCode() == 200 && apiResponse.getResult() != null) {
-                        currentWallet = apiResponse.getResult();
-                        displayWalletInfo(currentWallet);
+                    if (apiResponse.getCode() == 200) {
+                        Double prevBalance = currentWallet != null ? currentWallet.getBalance() : null;
+
+                        if (currentWallet != null) {
+                            currentWallet.setBalance(Math.max(0, currentWallet.getBalance() - amount));
+                            currentWallet.setTotalWithdrawn(currentWallet.getTotalWithdrawn() + amount);
+                            displayWalletInfo(currentWallet);
+                            // Broadcast immediately so Profile updates too
+                            sendWalletUpdatedBroadcast();
+                        }
+
                         loadTransactions(true);
+
                         Toast.makeText(WalletActivity.this,
-                                "Rút tiền thành công", Toast.LENGTH_SHORT).show();
+                                "Rút tiền thành công! Đang đồng bộ số dư...", Toast.LENGTH_SHORT).show();
+
+                        refreshWalletInfoWithRetry(3, 800L, prevBalance, amount);
                     } else {
+                        progressBar.setVisibility(View.GONE);
                         showError(apiResponse.getMessage());
                     }
                 } else {
+                    progressBar.setVisibility(View.GONE);
                     showError("Không thể rút tiền");
                 }
             }
 
             @Override
-            public void onFailure(Call<ApiResponse<Wallet>> call, Throwable t) {
+            public void onFailure(retrofit2.Call<ApiResponse<Wallet>> call, Throwable t) {
                 progressBar.setVisibility(View.GONE);
                 showError("Lỗi kết nối: " + t.getMessage());
             }
         });
     }
 
+    // Sau rút tiền: làm mới ví với cơ chế retry để chờ backend cập nhật
+    private void refreshWalletInfoWithRetry(int attemptsLeft, long delayMs, Double prevBalance, double expectedDecrease) {
+        apiService.getUserWallet().enqueue(new retrofit2.Callback<ApiResponse<Wallet>>() {
+            @Override
+            public void onResponse(retrofit2.Call<ApiResponse<Wallet>> call,
+                                   retrofit2.Response<ApiResponse<Wallet>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().getResult() != null) {
+                    Wallet fresh = response.body().getResult();
+                    currentWallet = fresh;
+                    displayWalletInfo(fresh);
+                    // Broadcast each time we fetch fresh wallet
+                    sendWalletUpdatedBroadcast();
+
+                    boolean updated = false;
+                    if (prevBalance != null) {
+                        // Kiểm tra số dư đã giảm ít nhất gần bằng số tiền rút (cho phép sai số nhỏ)
+                        updated = fresh.getBalance() <= (prevBalance - expectedDecrease + 0.5);
+                    }
+
+                    if (updated || attemptsLeft <= 0) {
+                        progressBar.setVisibility(View.GONE);
+                    } else {
+                        // Thử lại sau delay
+                        android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+                        handler.postDelayed(() -> refreshWalletInfoWithRetry(attemptsLeft - 1, delayMs, prevBalance, expectedDecrease), delayMs);
+                    }
+                } else {
+                    if (attemptsLeft <= 0) {
+                        progressBar.setVisibility(View.GONE);
+                    } else {
+                        android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+                        handler.postDelayed(() -> refreshWalletInfoWithRetry(attemptsLeft - 1, delayMs, prevBalance, expectedDecrease), delayMs);
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<ApiResponse<Wallet>> call, Throwable t) {
+                if (attemptsLeft <= 0) {
+                    progressBar.setVisibility(View.GONE);
+                } else {
+                    android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+                    handler.postDelayed(() -> refreshWalletInfoWithRetry(attemptsLeft - 1, delayMs, prevBalance, expectedDecrease), delayMs);
+                }
+            }
+        });
+    }
+
     private void showError(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private void sendWalletUpdatedBroadcast() {
+        Intent intent = new Intent("com.example.partner_ftask.WALLET_UPDATED");
+        // optionally pass current balance
+        if (currentWallet != null) {
+            intent.putExtra("balance", currentWallet.getBalance());
+        }
+        sendBroadcast(intent);
     }
 
     @Override
@@ -523,4 +594,3 @@ public class WalletActivity extends AppCompatActivity {
         loadWalletInfo();
     }
 }
-

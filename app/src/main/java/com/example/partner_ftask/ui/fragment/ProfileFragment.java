@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.partner_ftask.R;
@@ -49,6 +50,8 @@ public class ProfileFragment extends Fragment {
     private PreferenceManager preferenceManager;
     private AuthRepository authRepository;
     private ApiService apiService;
+
+    private android.content.BroadcastReceiver walletUpdatedReceiver;
 
     @Nullable
     @Override
@@ -88,6 +91,42 @@ public class ProfileFragment extends Fragment {
 
         // Setup logout button
         btnLogout.setOnClickListener(v -> showLogoutDialog());
+
+        // Prepare receiver to listen for wallet updates
+        walletUpdatedReceiver = new android.content.BroadcastReceiver() {
+            @Override
+            public void onReceive(android.content.Context context, Intent intent) {
+                if ("com.example.partner_ftask.WALLET_UPDATED".equals(intent.getAction())) {
+                    // Refresh wallet info when broadcast received
+                    loadWalletInfo();
+                }
+            }
+        };
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        // Register receiver
+        android.content.IntentFilter filter = new android.content.IntentFilter("com.example.partner_ftask.WALLET_UPDATED");
+        ContextCompat.registerReceiver(requireContext(), walletUpdatedReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        // Unregister receiver to avoid leaks
+        try {
+            requireContext().unregisterReceiver(walletUpdatedReceiver);
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Ensure refreshing when returning from WalletActivity
+        loadWalletInfo();
     }
 
     private void loadUserInfo() {

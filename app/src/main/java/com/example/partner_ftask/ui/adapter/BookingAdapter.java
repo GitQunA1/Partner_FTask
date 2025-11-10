@@ -54,18 +54,18 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
     }
 
     class BookingViewHolder extends RecyclerView.ViewHolder {
-        private TextView tvServiceName;
-        private TextView tvStatusBadge;
-        private TextView tvDistrict;
-        private TextView tvDate;
-        private TextView tvTime;
-        private TextView tvDayInfo;
-        private TextView tvDuration;
-        private TextView tvPrice;
-        private TextView tvPartnerSlots;
-        private TextView tvJoinedPartners;
-        private TextView tvCustomerName;
-        private View layoutPartnerSlots;
+        private final TextView tvServiceName;
+        private final TextView tvStatusBadge;
+        private final TextView tvDistrict;
+        private final TextView tvDate;
+        private final TextView tvTime;
+        private final TextView tvDayInfo;
+        private final TextView tvDuration;
+        private final TextView tvPrice;
+        private final TextView tvPartnerSlots;
+        private final TextView tvJoinedPartners;
+        private final TextView tvCustomerName;
+        private final View layoutPartnerSlots;
 
         public BookingViewHolder(@NonNull View itemView) {
             super(itemView);
