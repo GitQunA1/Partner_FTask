@@ -41,13 +41,9 @@ public class ProfileFragment extends Fragment {
     private TextView tvFullName;
     private TextView tvPhoneNumber;
     private TextView tvBalance;
-    private TextView tvTotalEarned;
-    private TextView tvTotalWithdrawn;
+    private TextView tvRating;
+    private TextView tvReviewCount;
     private Button btnLogout;
-    private Button btnRefreshWallet;
-    private Button btnViewWallet;
-    private Button btnViewReviews;
-    private Button btnDistrictSettings;
     private ProgressBar progressBar;
 
     private PreferenceManager preferenceManager;
@@ -68,13 +64,9 @@ public class ProfileFragment extends Fragment {
         tvFullName = view.findViewById(R.id.tv_full_name);
         tvPhoneNumber = view.findViewById(R.id.tv_phone_number);
         tvBalance = view.findViewById(R.id.tv_balance);
-        tvTotalEarned = view.findViewById(R.id.tv_total_earned);
-        tvTotalWithdrawn = view.findViewById(R.id.tv_total_withdrawn);
+        tvRating = view.findViewById(R.id.tv_rating);
+        tvReviewCount = view.findViewById(R.id.tv_review_count);
         btnLogout = view.findViewById(R.id.btn_logout);
-        btnRefreshWallet = view.findViewById(R.id.btn_refresh_wallet);
-        btnViewReviews = view.findViewById(R.id.btn_view_reviews);
-        btnViewWallet = view.findViewById(R.id.btn_view_wallet);
-        btnDistrictSettings = view.findViewById(R.id.btn_district_settings);
         progressBar = view.findViewById(R.id.progress_bar);
 
         // Initialize managers
@@ -89,12 +81,13 @@ public class ProfileFragment extends Fragment {
         // Load wallet info
         loadWalletInfo();
 
-        // Setup buttons
+        // Setup card clicks
+        view.findViewById(R.id.card_wallet).setOnClickListener(v -> openWalletActivity());
+        view.findViewById(R.id.card_reviews).setOnClickListener(v -> openReviewsActivity());
+        view.findViewById(R.id.card_district_settings).setOnClickListener(v -> openDistrictSettings());
+
+        // Setup logout button
         btnLogout.setOnClickListener(v -> showLogoutDialog());
-        btnRefreshWallet.setOnClickListener(v -> loadWalletInfo());
-        btnViewReviews.setOnClickListener(v -> openReviewsActivity());
-        btnViewWallet.setOnClickListener(v -> openWalletActivity());
-        btnDistrictSettings.setOnClickListener(v -> openDistrictSettings());
     }
 
     private void loadUserInfo() {
@@ -192,8 +185,6 @@ public class ProfileFragment extends Fragment {
         }
 
         tvBalance.setText(DateTimeUtils.formatCurrency(wallet.getBalance()));
-        tvTotalEarned.setText(DateTimeUtils.formatCurrency(wallet.getTotalEarned()));
-        tvTotalWithdrawn.setText(DateTimeUtils.formatCurrency(wallet.getTotalWithdrawn()));
 
         // Update user info from wallet if available
         if (wallet.getUser() != null) {
@@ -207,17 +198,25 @@ public class ProfileFragment extends Fragment {
                 preferenceManager.savePhoneNumber(wallet.getUser().getPhoneNumber());
             }
         }
+
+        // Load reviews separately
+        loadReviewsInfo();
     }
 
     private void displayDefaultWalletInfo() {
         tvBalance.setText(DateTimeUtils.formatCurrency(0));
-        tvTotalEarned.setText(DateTimeUtils.formatCurrency(0));
-        tvTotalWithdrawn.setText(DateTimeUtils.formatCurrency(0));
+        tvRating.setText("0.0");
+        tvReviewCount.setText("(0)");
+    }
+
+    private void loadReviewsInfo() {
+        // For now just set default - can implement API call later
+        tvRating.setText("0.0");
+        tvReviewCount.setText("(0)");
     }
 
     private void setLoading(boolean isLoading) {
         progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
-        btnRefreshWallet.setEnabled(!isLoading);
     }
 
     private void openWalletActivity() {

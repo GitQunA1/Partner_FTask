@@ -3,7 +3,6 @@ package com.example.partner_ftask.ui.adapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -11,7 +10,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.partner_ftask.R;
 import com.example.partner_ftask.data.model.Booking;
-import com.example.partner_ftask.data.model.BookingPartner;
 import com.example.partner_ftask.utils.DateTimeUtils;
 
 import java.util.ArrayList;
@@ -42,7 +40,7 @@ public class MyJobsAdapter extends RecyclerView.Adapter<MyJobsAdapter.MyJobViewH
     @Override
     public MyJobViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_booking, parent, false);
+                .inflate(R.layout.item_booking_new, parent, false);
         return new MyJobViewHolder(view);
     }
 
@@ -59,22 +57,22 @@ public class MyJobsAdapter extends RecyclerView.Adapter<MyJobsAdapter.MyJobViewH
 
     class MyJobViewHolder extends RecyclerView.ViewHolder {
         private TextView tvServiceName;
-        private TextView tvStatus;
-        private TextView tvStartTime;
-        private TextView tvAddress;
-        private TextView tvCustomerName;
+        private TextView tvDistrict;
+        private TextView tvDate;
+        private TextView tvTime;
+        private TextView tvDayInfo;
+        private TextView tvDuration;
         private TextView tvPrice;
-        private Button btnAction;
 
         public MyJobViewHolder(@NonNull View itemView) {
             super(itemView);
             tvServiceName = itemView.findViewById(R.id.tv_service_name);
-            tvStatus = itemView.findViewById(R.id.tv_status);
-            tvStartTime = itemView.findViewById(R.id.tv_start_time);
-            tvAddress = itemView.findViewById(R.id.tv_address);
-            tvCustomerName = itemView.findViewById(R.id.tv_customer_name);
+            tvDistrict = itemView.findViewById(R.id.tv_district);
+            tvDate = itemView.findViewById(R.id.tv_date);
+            tvTime = itemView.findViewById(R.id.tv_time);
+            tvDayInfo = itemView.findViewById(R.id.tv_day_info);
+            tvDuration = itemView.findViewById(R.id.tv_duration);
             tvPrice = itemView.findViewById(R.id.tv_price);
-            btnAction = itemView.findViewById(R.id.btn_action);
         }
 
         public void bind(Booking booking) {
@@ -83,31 +81,26 @@ public class MyJobsAdapter extends RecyclerView.Adapter<MyJobsAdapter.MyJobViewH
                 tvServiceName.setText(booking.getVariant().getName());
             }
 
-            // Get partner status
-            String partnerStatus = getPartnerStatus(booking);
-
-            // Set status
-            tvStatus.setText(getStatusText(partnerStatus));
-            tvStatus.setBackgroundColor(getStatusColor(partnerStatus));
-
-            // Set start time
-            tvStartTime.setText(DateTimeUtils.formatDateTime(booking.getStartAt()));
-
-            // Set address
-            if (booking.getAddress() != null) {
-                tvAddress.setText(booking.getAddress().getFullAddress());
+            // Set district
+            if (booking.getAddress() != null && booking.getAddress().getDistrict() != null) {
+                tvDistrict.setText(booking.getAddress().getDistrict());
             }
 
-            // Set customer name
-            if (booking.getCustomer() != null) {
-                tvCustomerName.setText(booking.getCustomer().getFullName());
+            // Set date and time
+            if (booking.getStartAt() != null) {
+                tvDate.setText(DateTimeUtils.formatDate(booking.getStartAt()));
+                tvTime.setText(DateTimeUtils.formatTimeRange(booking.getStartAt(), booking.getVariant()));
+                tvDayInfo.setText(DateTimeUtils.formatDayInfo(booking.getStartAt()));
+            }
+
+            // Set duration
+            if (booking.getVariant() != null) {
+                int hours = booking.getVariant().getDuration() / 60;
+                tvDuration.setText(hours + " giờ");
             }
 
             // Set price
             tvPrice.setText(DateTimeUtils.formatCurrency(booking.getTotalPrice()));
-
-            // Setup action button
-            setupActionButton(booking, partnerStatus);
 
             // Click listener
             itemView.setOnClickListener(v -> {
@@ -116,90 +109,5 @@ public class MyJobsAdapter extends RecyclerView.Adapter<MyJobsAdapter.MyJobViewH
                 }
             });
         }
-
-        private String getPartnerStatus(Booking booking) {
-            if (booking.getPartners() != null && !booking.getPartners().isEmpty()) {
-                // ✅ FIX: Find current partner by matching partner ID
-                com.example.partner_ftask.utils.PreferenceManager prefManager =
-                    new com.example.partner_ftask.utils.PreferenceManager(itemView.getContext());
-                int currentPartnerId = prefManager.getPartnerId();
-
-                // Find current partner in the list
-                for (BookingPartner bp : booking.getPartners()) {
-                    if (bp.getPartner() != null && bp.getPartner().getId() == currentPartnerId) {
-                        android.util.Log.d("MyJobsAdapter", "✅ Found current partner status for booking #" +
-                            booking.getId() + ": " + bp.getStatus());
-                        return bp.getStatus();
-                    }
-                }
-
-                // Fallback: if no match found, return first partner status
-                // This should not happen if filtering is done correctly
-                android.util.Log.w("MyJobsAdapter", "⚠️ Current partner not found in booking #" +
-                    booking.getId() + ", using first partner");
-                return booking.getPartners().get(0).getStatus();
-            }
-            return "UNKNOWN";
-        }
-
-        private String getStatusText(String status) {
-            switch (status) {
-                case "JOINED":
-                    return "Đã nhận";
-                case "WORKING":
-                    return "Đang làm";
-                case "COMPLETED":
-                    return "Hoàn thành";
-                case "CANCELLED":
-                    return "Đã hủy";
-                default:
-                    return status;
-            }
-        }
-
-        private int getStatusColor(String status) {
-            switch (status) {
-                case "JOINED":
-                    return 0xFF2196F3; // Blue
-                case "WORKING":
-                    return 0xFFFF9800; // Orange
-                case "COMPLETED":
-                    return 0xFF4CAF50; // Green
-                case "CANCELLED":
-                    return 0xFFF44336; // Red
-                default:
-                    return 0xFF757575;
-            }
-        }
-
-        private void setupActionButton(Booking booking, String partnerStatus) {
-            btnAction.setVisibility(View.VISIBLE);
-
-            switch (partnerStatus) {
-                case "JOINED":
-                    btnAction.setText("Bắt đầu");
-                    btnAction.setOnClickListener(v -> {
-                        if (listener != null) {
-                            listener.onStartJob(booking);
-                        }
-                    });
-                    break;
-                case "WORKING":
-                    btnAction.setText("Hoàn thành");
-                    btnAction.setOnClickListener(v -> {
-                        if (listener != null) {
-                            listener.onCompleteJob(booking);
-                        }
-                    });
-                    break;
-                case "COMPLETED":
-                case "CANCELLED":
-                    btnAction.setVisibility(View.GONE);
-                    break;
-                default:
-                    btnAction.setVisibility(View.GONE);
-            }
-        }
     }
 }
-

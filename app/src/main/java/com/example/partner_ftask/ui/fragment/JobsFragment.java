@@ -50,7 +50,7 @@ public class JobsFragment extends Fragment implements BookingAdapter.OnBookingCl
     private BookingAdapter adapter;
     private SwipeRefreshLayout swipeRefresh;
     private ProgressBar progressBar;
-    private TextView tvEmpty;
+    private View tvEmpty;
     private ApiService apiService;
     private Button btnPrevious, btnNext, btnFromDate, btnToDate;
     private TextView tvPageInfo;
@@ -160,7 +160,6 @@ public class JobsFragment extends Fragment implements BookingAdapter.OnBookingCl
 
         if (token == null || token.isEmpty()) {
             tvEmpty.setVisibility(View.VISIBLE);
-            tvEmpty.setText("Vui lòng đăng nhập để xem công việc");
             Toast.makeText(requireContext(), "Bạn chưa đăng nhập! Vui lòng vào tab Cá nhân để đăng nhập.", Toast.LENGTH_LONG).show();
         } else {
             loadAvailableJobs();
@@ -200,7 +199,6 @@ public class JobsFragment extends Fragment implements BookingAdapter.OnBookingCl
                                     recyclerView.setVisibility(View.GONE);
                                     tvEmpty.setVisibility(View.VISIBLE);
                                     adapter.setBookings(new ArrayList<>()); // Clear adapter
-                                    tvEmpty.setText("Không có công việc khả dụng");
                                 }
                             } else {
                                 Toast.makeText(requireContext(), "Lỗi: " + apiResponse.getMessage(), Toast.LENGTH_LONG).show();

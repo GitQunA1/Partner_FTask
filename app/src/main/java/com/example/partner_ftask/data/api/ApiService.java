@@ -4,10 +4,12 @@ import com.example.partner_ftask.data.model.ApiResponse;
 import com.example.partner_ftask.data.model.AuthResponse;
 import com.example.partner_ftask.data.model.Booking;
 import com.example.partner_ftask.data.model.District;
+import com.example.partner_ftask.data.model.Notification;
 import com.example.partner_ftask.data.model.PageResponse;
 import com.example.partner_ftask.data.model.Review;
 import com.example.partner_ftask.data.model.TopUpResponse;
 import com.example.partner_ftask.data.model.Transaction;
+import com.example.partner_ftask.data.model.UnreadCountResponse;
 import com.example.partner_ftask.data.model.UpdateDistrictsRequest;
 import com.example.partner_ftask.data.model.UpdateUserInfoRequest;
 import com.example.partner_ftask.data.model.UserInfoResponse;
@@ -140,6 +142,24 @@ public interface ApiService {
     Call<ApiResponse<Booking>> completeBooking(@Path("bookingId") int bookingId);
 
     // Cancel a booking
+
+    // ==================== NOTIFICATIONS ====================
+
+    // Get all notifications for partner
+    @GET("notifications")
+    Call<ApiResponse<List<Notification>>> getNotifications();
+
+    // Get unread notification count
+    @GET("notifications/unread-count")
+    Call<ApiResponse<UnreadCountResponse>> getUnreadCount();
+
+    // Mark a notification as read
+    @PUT("notifications/{notificationId}/read")
+    Call<ApiResponse<Void>> markNotificationAsRead(@Path("notificationId") int notificationId);
+
+    // Mark all notifications as read
+    @PUT("notifications/read-all")
+    Call<ApiResponse<Void>> markAllNotificationsAsRead();
     @POST("partners/bookings/{bookingId}/cancel")
     Call<ApiResponse<Booking>> cancelBooking(@Path("bookingId") int bookingId);
 }

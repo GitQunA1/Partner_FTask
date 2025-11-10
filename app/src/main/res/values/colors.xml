@@ -4,22 +4,35 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- Primary Colors - Blue Theme -->
-    <color name="primary">#2196F3</color>
-    <color name="primary_dark">#1976D2</color>
-    <color name="primary_light">#BBDEFB</color>
-    <color name="accent">#FF9800</color>
+    <!-- Primary Colors - Purple/Blue Gradient Theme (bTaskee style) -->
+    <color name="primary">#5B4FC7</color>
+    <color name="primary_dark">#4A3FA6</color>
+    <color name="primary_light">#7B6FE8</color>
+    <color name="accent">#FF6B9D</color>
+
+    <!-- Gradient Colors -->
+    <color name="gradient_start">#5B4FC7</color>
+    <color name="gradient_end">#7B6FE8</color>
 
     <!-- Background Colors -->
-    <color name="background">#F5F5F5</color>
+    <color name="background">#F0F0F5</color>
     <color name="card_background">#FFFFFF</color>
     <color name="surface">#FFFFFF</color>
+
+    <!-- Status Badge Colors -->
+    <color name="badge_new">#E3F2FD</color>
+    <color name="badge_new_text">#2196F3</color>
+    <color name="badge_accepted">#FFF9C4</color>
+    <color name="badge_accepted_text">#F57F17</color>
 
     <!-- Text Colors -->
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#757575</color>
     <color name="text_hint">#BDBDBD</color>
     <color name="text_white">#FFFFFF</color>
+
+    <!-- Price/Money Color -->
+    <color name="price_color">#FF4081</color>
 
     <!-- Status Colors -->
     <color name="success">#4CAF50</color>

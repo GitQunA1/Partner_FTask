@@ -45,7 +45,7 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
     private MyJobsAdapter adapter;
     private SwipeRefreshLayout swipeRefresh;
     private ProgressBar progressBar;
-    private TextView tvEmpty;
+    private View tvEmpty;
     private ApiService apiService;
     private com.example.partner_ftask.utils.PreferenceManager preferenceManager;
 

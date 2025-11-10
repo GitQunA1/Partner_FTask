@@ -25,7 +25,6 @@ import retrofit2.Response;
 
 public class BookingDetailActivity extends AppCompatActivity {
 
-    private MaterialToolbar toolbar;
     private TextView tvServiceName;
     private TextView tvStatus;
     private TextView tvServiceDescription;
@@ -52,9 +51,6 @@ public class BookingDetailActivity extends AppCompatActivity {
         // Initialize views
         initViews();
 
-        // Setup toolbar
-        toolbar.setNavigationOnClickListener(v -> finish());
-
         // Get booking ID from intent
         bookingId = getIntent().getIntExtra("booking_id", -1);
         if (bookingId == -1) {
@@ -71,7 +67,9 @@ public class BookingDetailActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        toolbar = findViewById(R.id.toolbar);
+        // Setup back button instead of toolbar
+        findViewById(R.id.btn_back).setOnClickListener(v -> finish());
+
         tvServiceName = findViewById(R.id.tv_service_name);
         tvStatus = findViewById(R.id.tv_status);
         tvServiceDescription = findViewById(R.id.tv_service_description);

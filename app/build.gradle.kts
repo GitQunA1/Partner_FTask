@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -59,6 +60,11 @@ dependencies {
     // Lifecycle components
     implementation(libs.lifecycle.viewmodel)
     implementation(libs.lifecycle.livedata)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+    implementation(libs.play.services.tasks)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

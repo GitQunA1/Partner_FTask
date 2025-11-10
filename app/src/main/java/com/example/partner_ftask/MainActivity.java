@@ -13,6 +13,7 @@ import com.example.partner_ftask.data.api.ApiClient;
 import com.example.partner_ftask.data.api.ApiService;
 import com.example.partner_ftask.data.model.ApiResponse;
 import com.example.partner_ftask.data.model.District;
+import com.example.partner_ftask.data.model.UnreadCountResponse;
 import com.example.partner_ftask.data.model.UpdateDistrictsRequest;
 import com.example.partner_ftask.data.model.UpdateUserInfoRequest;
 import com.example.partner_ftask.data.model.UserInfoResponse;
@@ -20,9 +21,12 @@ import com.example.partner_ftask.ui.activity.PhoneLoginActivity;
 import com.example.partner_ftask.ui.adapter.DistrictSelectionAdapter;
 import com.example.partner_ftask.ui.fragment.JobsFragment;
 import com.example.partner_ftask.ui.fragment.MyJobsFragment;
+import com.example.partner_ftask.ui.fragment.NotificationsFragment;
 import com.example.partner_ftask.ui.fragment.ProfileFragment;
 import com.example.partner_ftask.utils.PreferenceManager;
+import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +35,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NotificationsFragment.NotificationBadgeListener {
 
     private BottomNavigationView bottomNavigationView;
     private FragmentManager fragmentManager;
@@ -39,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private ApiService apiService;
     private boolean isCheckingUserInfo = false;
     private boolean isShowingDialog = false;
+    private BadgeDrawable notificationBadge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,12 +63,34 @@ public class MainActivity extends AppCompatActivity {
         fragmentManager = getSupportFragmentManager();
 
         setupBottomNavigation();
+        setupNotificationBadge();
+        requestFCMToken();
 
         if (savedInstanceState == null) {
             loadFragment(new JobsFragment());
         }
 
         checkUserInfoAndShowDialogs();
+
+        // Handle notification click from FCM
+        handleNotificationIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleNotificationIntent(intent);
+    }
+
+    private void handleNotificationIntent(Intent intent) {
+        if (intent != null && intent.hasExtra("notification_type")) {
+            String type = intent.getStringExtra("notification_type");
+            if ("BOOKING".equals(type) || "PAYMENT".equals(type) || "SYSTEM".equals(type)) {
+                // Navigate to notifications tab
+                bottomNavigationView.setSelectedItemId(R.id.nav_notifications);
+            }
+        }
     }
 
     @Override
@@ -72,6 +99,8 @@ public class MainActivity extends AppCompatActivity {
         if (preferenceManager.isLoggedIn() && !isCheckingUserInfo && !preferenceManager.hasCompletedSetup()) {
             checkUserInfoAndShowDialogs();
         }
+        // Update notification badge when return to activity
+        updateBadge();
     }
 
     private void checkUserInfoAndShowDialogs() {
@@ -125,6 +154,8 @@ public class MainActivity extends AppCompatActivity {
                 fragment = new JobsFragment();
             } else if (itemId == R.id.nav_my_jobs) {
                 fragment = new MyJobsFragment();
+            } else if (itemId == R.id.nav_notifications) {
+                fragment = new NotificationsFragment();
             } else if (itemId == R.id.nav_profile) {
                 fragment = new ProfileFragment();
             }
@@ -335,5 +366,75 @@ public class MainActivity extends AppCompatActivity {
             ProfileFragment profileFragment = (ProfileFragment) currentFragment;
             profileFragment.refreshUserInfo();
         }
+    }
+
+    // ==================== FCM & NOTIFICATION METHODS ====================
+
+    private void requestFCMToken() {
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        String token = task.getResult();
+                        android.util.Log.d("FCM", "Token: " + token);
+                        // Send token to backend
+                        updateFCMTokenToBackend(token);
+                    } else {
+                        android.util.Log.e("FCM", "Failed to get token", task.getException());
+                    }
+                });
+    }
+
+    private void updateFCMTokenToBackend(String fcmToken) {
+        UpdateUserInfoRequest request = new UpdateUserInfoRequest(null, fcmToken, null);
+        apiService.updateUserInfo(request).enqueue(new Callback<ApiResponse<UserInfoResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<UserInfoResponse>> call,
+                                   Response<ApiResponse<UserInfoResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    android.util.Log.d("FCM", "Token updated successfully");
+                } else {
+                    android.util.Log.e("FCM", "Failed to update token");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<UserInfoResponse>> call, Throwable t) {
+                android.util.Log.e("FCM", "Error updating token: " + t.getMessage());
+            }
+        });
+    }
+
+    private void setupNotificationBadge() {
+        notificationBadge = bottomNavigationView.getOrCreateBadge(R.id.nav_notifications);
+        notificationBadge.setBackgroundColor(getResources().getColor(android.R.color.holo_red_dark, null));
+        notificationBadge.setVisible(false);
+        updateBadge();
+    }
+
+    @Override
+    public void updateBadge() {
+        apiService.getUnreadCount().enqueue(new Callback<ApiResponse<UnreadCountResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<UnreadCountResponse>> call,
+                                   Response<ApiResponse<UnreadCountResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse<UnreadCountResponse> apiResponse = response.body();
+                    if (apiResponse.getCode() == 200 && apiResponse.getResult() != null) {
+                        int unreadCount = apiResponse.getResult().getUnreadCount();
+                        if (unreadCount > 0) {
+                            notificationBadge.setNumber(unreadCount);
+                            notificationBadge.setVisible(true);
+                        } else {
+                            notificationBadge.setVisible(false);
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<UnreadCountResponse>> call, Throwable t) {
+                // Silent fail
+            }
+        });
     }
 }

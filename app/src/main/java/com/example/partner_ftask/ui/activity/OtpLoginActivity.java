@@ -29,31 +29,6 @@ public class OtpLoginActivity extends AppCompatActivity {
     private PreferenceManager preferenceManager;
     private AuthRepository authRepository;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_otp_login);
-
-        preferenceManager = new PreferenceManager(this);
-        authRepository = new AuthRepository(this);
-
-        // Check if already logged in
-        if (preferenceManager.isLoggedIn()) {
-            goToMainActivity();
-            return;
-        }
-
-        // Initialize views
-        etPhoneNumber = findViewById(R.id.et_phone_number);
-        etOtp = findViewById(R.id.et_otp);
-        btnLogin = findViewById(R.id.btn_login);
-        progressBar = findViewById(R.id.progress_bar);
-        // Pre-fill OTP with default value for testing
-        etOtp.setText("123456");
-
-        // Setup login button
-        btnLogin.setOnClickListener(v -> login());
-    }
 
     private void login() {
         String phone = etPhoneNumber.getText().toString().trim();

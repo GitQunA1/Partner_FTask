@@ -15,6 +15,9 @@ lifecycle = "2.8.7"
 cardview = "1.0.0"
 recyclerview = "1.3.2"
 swiperefreshlayout = "1.2.0-alpha01"
+firebaseBom = "33.7.0"
+playServicesTasks = "18.4.0"
+googleServices = "4.4.2"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -35,7 +38,11 @@ lifecycle-livedata = { group = "androidx.lifecycle", name = "lifecycle-livedata"
 cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
 recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
+play-services-tasks = { group = "com.google.android.gms", name = "play-services-tasks", version.ref = "playServicesTasks" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 
