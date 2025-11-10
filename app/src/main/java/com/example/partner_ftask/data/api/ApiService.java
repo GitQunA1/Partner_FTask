@@ -7,6 +7,7 @@ import com.example.partner_ftask.data.model.District;
 import com.example.partner_ftask.data.model.Notification;
 import com.example.partner_ftask.data.model.PageResponse;
 import com.example.partner_ftask.data.model.Review;
+import com.example.partner_ftask.data.model.StartBookingQrRequest;
 import com.example.partner_ftask.data.model.TopUpResponse;
 import com.example.partner_ftask.data.model.Transaction;
 import com.example.partner_ftask.data.model.UnreadCountResponse;
@@ -138,6 +139,10 @@ public interface ApiService {
     // Start working on a booking
     @POST("partners/bookings/{bookingId}/start")
     Call<ApiResponse<Booking>> startBooking(@Path("bookingId") int bookingId);
+
+    // Start working on a booking by QR code
+    @POST("partners/bookings/start-by-qr")
+    Call<ApiResponse<Booking>> startBookingByQr(@Body StartBookingQrRequest request);
 
     // Complete a booking
     @POST("partners/bookings/{bookingId}/complete")

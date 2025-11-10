@@ -1,6 +1,7 @@
 package com.example.partner_ftask.ui.activity;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -9,6 +10,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 import com.example.partner_ftask.R;
 import com.example.partner_ftask.data.api.ApiClient;
@@ -46,6 +49,7 @@ public class BookingDetailActivity extends AppCompatActivity {
     private ApiService apiService;
     private int bookingId;
     private Booking currentBooking;
+    private ActivityResultLauncher<Intent> qrScanLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,8 +70,27 @@ public class BookingDetailActivity extends AppCompatActivity {
         // Initialize API service
         apiService = ApiClient.getApiService();
 
+        // Setup QR scan launcher
+        setupQrScanLauncher();
+
         // Load booking detail
         loadBookingDetail();
+    }
+
+    private void setupQrScanLauncher() {
+        qrScanLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    String qrToken = result.getData().getStringExtra("qr_token");
+                    if (qrToken != null && !qrToken.isEmpty()) {
+                        startBookingByQr(qrToken);
+                    } else {
+                        Toast.makeText(this, "Không tìm thấy mã QR hợp lệ", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        );
     }
 
     private void initViews() {
@@ -164,10 +187,11 @@ public class BookingDetailActivity extends AppCompatActivity {
                 DateTimeUtils.formatDateTime(booking.getCompletedAt()));
         }
 
-        // Status
+        String bookingStatus = booking.getStatus();
         String partnerStatus = getPartnerStatus(booking);
-        tvStatus.setText(getStatusText(partnerStatus));
-        tvStatus.setBackgroundColor(getStatusColor(partnerStatus));
+        
+        tvStatus.setText(getStatusText(bookingStatus));
+        tvStatus.setBackgroundColor(getStatusColor(bookingStatus));
 
         // Price
         tvPrice.setText(DateTimeUtils.formatCurrency(booking.getTotalPrice()));
@@ -191,16 +215,23 @@ public class BookingDetailActivity extends AppCompatActivity {
             tvCustomerPhone.setText(booking.getCustomer().getPhoneNumber());
         }
 
-        // Setup action buttons
-        setupActionButtons(booking, partnerStatus);
+        setupActionButtons(booking, bookingStatus, partnerStatus);
     }
 
     private String getPartnerStatus(Booking booking) {
         if (booking.getPartners() != null && !booking.getPartners().isEmpty()) {
-            BookingPartner bookingPartner = booking.getPartners().get(0);
-            return bookingPartner.getStatus();
+            com.example.partner_ftask.utils.PreferenceManager preferenceManager = 
+                new com.example.partner_ftask.utils.PreferenceManager(this);
+            int currentPartnerId = preferenceManager.getPartnerId();
+            
+            for (BookingPartner bp : booking.getPartners()) {
+                if (bp.getPartner() != null && bp.getPartner().getId() == currentPartnerId) {
+                    return bp.getStatus();
+                }
+            }
+            return null;
         }
-        return booking.getStatus();
+        return null;
     }
 
     private String getStatusText(String status) {
@@ -240,32 +271,41 @@ public class BookingDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void setupActionButtons(Booking booking, String status) {
+    private void setupActionButtons(Booking booking, String bookingStatus, String partnerStatus) {
         btnPrimaryAction.setVisibility(View.VISIBLE);
         btnCancel.setVisibility(View.GONE);
 
-        switch (status) {
-            case "PENDING":
-            case "PARTIALLY_ACCEPTED":
-                btnPrimaryAction.setText("Nhận việc");
-                btnPrimaryAction.setOnClickListener(v -> claimBooking());
-                break;
-            case "JOINED":
-                btnPrimaryAction.setText("Bắt đầu");
-                btnPrimaryAction.setOnClickListener(v -> startBooking());
-                btnCancel.setVisibility(View.VISIBLE);
-                btnCancel.setOnClickListener(v -> showCancelDialog());
-                break;
-            case "WORKING":
-                btnPrimaryAction.setText("Hoàn thành");
-                btnPrimaryAction.setOnClickListener(v -> completeBooking());
-                btnCancel.setVisibility(View.VISIBLE);
-                btnCancel.setOnClickListener(v -> showCancelDialog());
-                break;
-            case "COMPLETED":
-            case "CANCELLED":
-                btnPrimaryAction.setVisibility(View.GONE);
-                break;
+        // If partner has joined, use partner status for actions
+        // Otherwise, use booking status
+        if (partnerStatus != null && "JOINED".equals(partnerStatus)) {
+            // Partner has joined - can start with QR
+            btnPrimaryAction.setText("Quét QR để bắt đầu");
+            btnPrimaryAction.setOnClickListener(v -> startQrScan());
+            btnCancel.setVisibility(View.VISIBLE);
+            btnCancel.setOnClickListener(v -> showCancelDialog());
+        } else if (partnerStatus != null && "WORKING".equals(partnerStatus)) {
+            // Partner is working - can complete
+            btnPrimaryAction.setText("Hoàn thành");
+            btnPrimaryAction.setOnClickListener(v -> completeBooking());
+            btnCancel.setVisibility(View.VISIBLE);
+            btnCancel.setOnClickListener(v -> showCancelDialog());
+        } else {
+            // Partner hasn't joined or booking is available - can claim
+            switch (bookingStatus) {
+                case "PENDING":
+                case "PARTIALLY_ACCEPTED":
+                    btnPrimaryAction.setText("Nhận việc");
+                    btnPrimaryAction.setOnClickListener(v -> claimBooking());
+                    break;
+                case "COMPLETED":
+                case "CANCELLED":
+                    btnPrimaryAction.setVisibility(View.GONE);
+                    break;
+                default:
+                    btnPrimaryAction.setText("Nhận việc");
+                    btnPrimaryAction.setOnClickListener(v -> claimBooking());
+                    break;
+            }
         }
     }
 
@@ -309,21 +349,19 @@ public class BookingDetailActivity extends AppCompatActivity {
         });
     }
 
-    private void startBooking() {
-        new AlertDialog.Builder(this)
-                .setTitle("Bắt đầu công việc")
-                .setMessage("Bạn có muốn bắt đầu công việc này không?")
-                .setPositiveButton("Bắt đầu", (dialog, which) -> {
-                    performStartBooking();
-                })
-                .setNegativeButton("Hủy", null)
-                .show();
+
+    private void startQrScan() {
+        Intent intent = new Intent(this, QrScanActivity.class);
+        qrScanLauncher.launch(intent);
     }
 
-    private void performStartBooking() {
+    private void startBookingByQr(String qrToken) {
         showLoading(true);
 
-        apiService.startBooking(bookingId).enqueue(new Callback<ApiResponse<Booking>>() {
+        com.example.partner_ftask.data.model.StartBookingQrRequest request =
+            new com.example.partner_ftask.data.model.StartBookingQrRequest(qrToken);
+
+        apiService.startBookingByQr(request).enqueue(new Callback<ApiResponse<Booking>>() {
             @Override
             public void onResponse(Call<ApiResponse<Booking>> call, Response<ApiResponse<Booking>> response) {
                 showLoading(false);
@@ -334,10 +372,27 @@ public class BookingDetailActivity extends AppCompatActivity {
                         Toast.makeText(BookingDetailActivity.this, "Đã bắt đầu công việc!", Toast.LENGTH_SHORT).show();
                         loadBookingDetail();
                     } else {
-                        Toast.makeText(BookingDetailActivity.this, apiResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                        String errorMessage = apiResponse.getMessage();
+                        if (errorMessage == null || errorMessage.isEmpty()) {
+                            errorMessage = "Lỗi khi bắt đầu công việc";
+                        }
+                        Toast.makeText(BookingDetailActivity.this, errorMessage, Toast.LENGTH_LONG).show();
                     }
                 } else {
-                    Toast.makeText(BookingDetailActivity.this, "Lỗi khi bắt đầu công việc", Toast.LENGTH_SHORT).show();
+                    String errorMessage = "Lỗi khi bắt đầu công việc";
+                    if (response.errorBody() != null) {
+                        try {
+                            com.google.gson.Gson gson = new com.google.gson.Gson();
+                            ApiResponse<?> errorResponse = gson.fromJson(
+                                response.errorBody().string(), ApiResponse.class);
+                            if (errorResponse != null && errorResponse.getMessage() != null) {
+                                errorMessage = errorResponse.getMessage();
+                            }
+                        } catch (Exception e) {
+                            // Use default message
+                        }
+                    }
+                    Toast.makeText(BookingDetailActivity.this, errorMessage, Toast.LENGTH_LONG).show();
                 }
             }
 

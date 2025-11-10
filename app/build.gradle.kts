@@ -66,6 +66,10 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.play.services.tasks)
 
+    // ZXing for QR code scanning
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("com.google.zxing:core:3.5.2")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
