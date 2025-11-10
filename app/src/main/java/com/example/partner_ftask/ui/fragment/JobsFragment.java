@@ -174,7 +174,7 @@ public class JobsFragment extends Fragment implements BookingAdapter.OnBookingCl
 
         Log.d("JobsFragment", "Loading jobs. Page: " + currentPage + ", From: " + fromDate + ", To: " + toDate);
 
-        apiService.getAvailableBookings(statuses, currentPage, PAGE_SIZE, fromDate, toDate, null, null, null)
+        apiService.getAvailableBookings(currentPage, PAGE_SIZE, statuses, fromDate, toDate, null, null, null)
                 .enqueue(new Callback<ApiResponse<PageResponse<Booking>>>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse<PageResponse<Booking>>> call, @NonNull Response<ApiResponse<PageResponse<Booking>>> response) {

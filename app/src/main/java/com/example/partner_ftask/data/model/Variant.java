@@ -4,8 +4,13 @@ public class Variant {
     private int id;
     private String name;
     private String description;
-    private int duration;
-    private double price;
+    private int duration; // Legacy field
+    private int durationHours;
+    private double price; // Legacy field
+    private double pricePerVariant;
+    private boolean isMultiPartner;
+    private int numberOfPartners;
+    private int serviceCatalogId;
     private String image;
 
     public int getId() {
@@ -33,19 +38,59 @@ public class Variant {
     }
 
     public int getDuration() {
-        return duration;
+        return durationHours > 0 ? durationHours : duration;
     }
 
     public void setDuration(int duration) {
         this.duration = duration;
     }
 
+    public int getDurationHours() {
+        return durationHours;
+    }
+
+    public void setDurationHours(int durationHours) {
+        this.durationHours = durationHours;
+    }
+
     public double getPrice() {
-        return price;
+        return pricePerVariant > 0 ? pricePerVariant : price;
     }
 
     public void setPrice(double price) {
         this.price = price;
+    }
+
+    public double getPricePerVariant() {
+        return pricePerVariant;
+    }
+
+    public void setPricePerVariant(double pricePerVariant) {
+        this.pricePerVariant = pricePerVariant;
+    }
+
+    public boolean isMultiPartner() {
+        return isMultiPartner;
+    }
+
+    public void setMultiPartner(boolean multiPartner) {
+        isMultiPartner = multiPartner;
+    }
+
+    public int getNumberOfPartners() {
+        return numberOfPartners;
+    }
+
+    public void setNumberOfPartners(int numberOfPartners) {
+        this.numberOfPartners = numberOfPartners;
+    }
+
+    public int getServiceCatalogId() {
+        return serviceCatalogId;
+    }
+
+    public void setServiceCatalogId(int serviceCatalogId) {
+        this.serviceCatalogId = serviceCatalogId;
     }
 
     public String getImage() {

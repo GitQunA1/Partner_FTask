@@ -3,6 +3,7 @@ package com.example.partner_ftask.data.model;
 public class BookingPartner {
     private int id;
     private String status;
+    private double partnerEarnings;
     private String cancelReason;
     private Partner partner;
 
@@ -21,6 +22,14 @@ public class BookingPartner {
     public void setStatus(String status) {
         this.status = status;
     }
+    public double getPartnerEarnings() {
+        return partnerEarnings;
+    }
+
+    public void setPartnerEarnings(double partnerEarnings) {
+        this.partnerEarnings = partnerEarnings;
+    }
+
 
     public String getCancelReason() {
         return cancelReason;

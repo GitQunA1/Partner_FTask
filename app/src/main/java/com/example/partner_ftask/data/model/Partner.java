@@ -2,6 +2,9 @@ package com.example.partner_ftask.data.model;
 
 public class Partner {
     private int id;
+    private User user;
+
+    // Legacy fields for backward compatibility
     private String fullName;
     private String phoneNumber;
     private String email;
@@ -17,7 +20,19 @@ public class Partner {
         this.id = id;
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    // Legacy getters with fallback to user object
     public String getFullName() {
+        if (user != null) {
+            return user.getFullName();
+        }
         return fullName;
     }
 
@@ -26,6 +41,9 @@ public class Partner {
     }
 
     public String getPhoneNumber() {
+        if (user != null) {
+            return user.getPhoneNumber();
+        }
         return phoneNumber;
     }
 
@@ -34,6 +52,9 @@ public class Partner {
     }
 
     public String getEmail() {
+        if (user != null) {
+            return user.getEmail();
+        }
         return email;
     }
 
@@ -42,6 +63,9 @@ public class Partner {
     }
 
     public String getAvatar() {
+        if (user != null) {
+            return user.getAvatar();
+        }
         return avatar;
     }
 

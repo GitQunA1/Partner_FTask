@@ -2,6 +2,7 @@ package com.example.partner_ftask.data.model;
 
 public class Address {
     private int id;
+    private String addressLine;
     private String streetAddress;
     private String ward;
     private String district;
@@ -9,6 +10,7 @@ public class Address {
     private String postalCode;
     private double latitude;
     private double longitude;
+    private boolean isDefault;
 
     public int getId() {
         return id;
@@ -16,6 +18,14 @@ public class Address {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getAddressLine() {
+        return addressLine;
+    }
+
+    public void setAddressLine(String addressLine) {
+        this.addressLine = addressLine;
     }
 
     public String getStreetAddress() {
@@ -74,11 +84,24 @@ public class Address {
         this.longitude = longitude;
     }
 
+    public boolean isDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(boolean aDefault) {
+        isDefault = aDefault;
+    }
+
     public String getFullAddress() {
         StringBuilder sb = new StringBuilder();
-        if (streetAddress != null && !streetAddress.isEmpty()) {
+
+        // Prioritize addressLine if available
+        if (addressLine != null && !addressLine.isEmpty()) {
+            sb.append(addressLine);
+        } else if (streetAddress != null && !streetAddress.isEmpty()) {
             sb.append(streetAddress);
         }
+
         if (ward != null && !ward.isEmpty()) {
             if (sb.length() > 0) sb.append(", ");
             sb.append(ward);

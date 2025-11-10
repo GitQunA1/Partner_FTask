@@ -158,10 +158,12 @@ public class MyJobsFragment extends Fragment implements MyJobsAdapter.OnJobActio
         showLoading(true);
         tvEmpty.setVisibility(View.GONE);
 
-        // Load all bookings and filter by partner status
-        // In a real app, you should have a dedicated API endpoint for partner's bookings
+        // Get current partner ID
+        int currentPartnerId = preferenceManager.getPartnerId();
+
+        // Load bookings filtered by partner ID
         // Note: API uses 1-based pagination, not 0-based
-        apiService.getBookings(null, 1, 50, null, null, null, null, null)
+        apiService.getBookings(1, 100, null, null, null, null, null, null, null, currentPartnerId, null)
                 .enqueue(new Callback<ApiResponse<PageResponse<Booking>>>() {
                     @Override
                     public void onResponse(Call<ApiResponse<PageResponse<Booking>>> call, Response<ApiResponse<PageResponse<Booking>>> response) {

@@ -1,7 +1,13 @@
 package com.example.partner_ftask.data.model;
 
+import java.util.List;
+
 public class Customer {
     private int id;
+    private List<Address> addresses;
+    private User user;
+
+    // Legacy fields for backward compatibility
     private String fullName;
     private String phoneNumber;
     private String email;
@@ -15,7 +21,27 @@ public class Customer {
         this.id = id;
     }
 
+    public List<Address> getAddresses() {
+        return addresses;
+    }
+
+    public void setAddresses(List<Address> addresses) {
+        this.addresses = addresses;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    // Legacy getters for backward compatibility
     public String getFullName() {
+        if (user != null) {
+            return user.getFullName();
+        }
         return fullName;
     }
 
@@ -24,6 +50,9 @@ public class Customer {
     }
 
     public String getPhoneNumber() {
+        if (user != null) {
+            return user.getPhoneNumber();
+        }
         return phoneNumber;
     }
 
@@ -32,6 +61,9 @@ public class Customer {
     }
 
     public String getEmail() {
+        if (user != null) {
+            return user.getEmail();
+        }
         return email;
     }
 
@@ -40,6 +72,9 @@ public class Customer {
     }
 
     public String getAvatar() {
+        if (user != null) {
+            return user.getAvatar();
+        }
         return avatar;
     }
 

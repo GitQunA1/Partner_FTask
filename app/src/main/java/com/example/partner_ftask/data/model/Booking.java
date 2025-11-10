@@ -7,10 +7,14 @@ import java.util.List;
 public class Booking {
     private int id;
     private String startAt;
+    private String completedAt;
     private double totalPrice;
     private String customerNote;
     private int requiredPartners;
+    private int numberOfJoinedPartner;
     private String status;
+    private boolean isCustomerAccepted;
+    private String method;
     private Customer customer;
     private Variant variant;
     private Address address;
@@ -31,6 +35,14 @@ public class Booking {
 
     public void setStartAt(String startAt) {
         this.startAt = startAt;
+    }
+
+    public String getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(String completedAt) {
+        this.completedAt = completedAt;
     }
 
     public double getTotalPrice() {
@@ -57,12 +69,36 @@ public class Booking {
         this.requiredPartners = requiredPartners;
     }
 
+    public int getNumberOfJoinedPartner() {
+        return numberOfJoinedPartner;
+    }
+
+    public void setNumberOfJoinedPartner(int numberOfJoinedPartner) {
+        this.numberOfJoinedPartner = numberOfJoinedPartner;
+    }
+
     public String getStatus() {
         return status;
     }
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public boolean isCustomerAccepted() {
+        return isCustomerAccepted;
+    }
+
+    public void setCustomerAccepted(boolean customerAccepted) {
+        isCustomerAccepted = customerAccepted;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
     }
 
     public Customer getCustomer() {

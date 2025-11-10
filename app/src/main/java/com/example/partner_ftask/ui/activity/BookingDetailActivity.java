@@ -35,6 +35,10 @@ public class BookingDetailActivity extends AppCompatActivity {
     private TextView tvCustomerNote;
     private TextView tvCustomerName;
     private TextView tvCustomerPhone;
+    private TextView tvPaymentMethod;
+    private TextView tvPartnerEarnings;
+    private TextView tvPartnerSlotsInfo;
+    private TextView tvCompletedTime;
     private Button btnPrimaryAction;
     private Button btnCancel;
     private ProgressBar progressBar;
@@ -76,6 +80,10 @@ public class BookingDetailActivity extends AppCompatActivity {
         tvDuration = findViewById(R.id.tv_duration);
         tvPrice = findViewById(R.id.tv_price);
         tvStartTime = findViewById(R.id.tv_start_time);
+        tvPaymentMethod = findViewById(R.id.tv_payment_method);
+        tvPartnerEarnings = findViewById(R.id.tv_partner_earnings);
+        tvPartnerSlotsInfo = findViewById(R.id.tv_partner_slots_info);
+        tvCompletedTime = findViewById(R.id.tv_completed_time);
         tvAddress = findViewById(R.id.tv_address);
         tvCustomerNote = findViewById(R.id.tv_customer_note);
         tvCustomerName = findViewById(R.id.tv_customer_name);
@@ -120,6 +128,40 @@ public class BookingDetailActivity extends AppCompatActivity {
             tvServiceName.setText(booking.getVariant().getName());
             tvServiceDescription.setText(booking.getVariant().getDescription());
             tvDuration.setText(DateTimeUtils.formatDuration(booking.getVariant().getDuration()));
+        }
+
+        // Payment method
+        if (booking.getMethod() != null) {
+            String methodText = "WALLET".equals(booking.getMethod()) ? "Ví điện tử" :
+                               "CASH".equals(booking.getMethod()) ? "Tiền mặt" : booking.getMethod();
+            tvPaymentMethod.setText(methodText);
+        }
+
+        // Partner earnings (if partner has joined)
+        if (booking.getPartners() != null && !booking.getPartners().isEmpty()) {
+            for (BookingPartner bp : booking.getPartners()) {
+                if (bp.getPartnerEarnings() > 0) {
+                    tvPartnerEarnings.setVisibility(View.VISIBLE);
+                    tvPartnerEarnings.setText("💰 Thu nhập của bạn: " +
+                        DateTimeUtils.formatCurrency(bp.getPartnerEarnings()));
+                    break;
+                }
+            }
+        }
+
+        // Partner slots info
+        if (booking.getRequiredPartners() > 1) {
+            tvPartnerSlotsInfo.setVisibility(View.VISIBLE);
+            int required = booking.getRequiredPartners();
+            int joined = booking.getNumberOfJoinedPartner();
+            tvPartnerSlotsInfo.setText("• Cần " + required + " người (đã có " + joined + ")");
+        }
+
+        // Completed time
+        if (booking.getCompletedAt() != null && !booking.getCompletedAt().isEmpty()) {
+            tvCompletedTime.setVisibility(View.VISIBLE);
+            tvCompletedTime.setText("✅ Hoàn thành lúc: " +
+                DateTimeUtils.formatDateTime(booking.getCompletedAt()));
         }
 
         // Status
